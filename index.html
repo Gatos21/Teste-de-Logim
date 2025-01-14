@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Acompanhamento de Chamados</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        #loginContainer {
+            max-width: 300px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #mainContainer {
+            display: none;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .ticket-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            align-items: center;
+        }
+
+        .timer {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .green { background-color: #90EE90 !important; }
+        .yellow { background-color: #FFFF99 !important; }
+        .orange { background-color: #FFB366 !important; }
+        .red { background-color: #FF9999 !important; }
+
+        #ticketList {
+            margin-top: 20px;
+        }
+
+        .error-message {
+            color: red;
+            margin-top: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <div id="loginContainer">
+        <h2>Login</h2>
+        <div class="input-group">
+            <label for="username">Usuário:</label>
+            <input type="text" id="username" required>
+        </div>
+        <div class="input-group">
+            <label for="password">Senha:</label>
+            <input type="password" id="password" required>
+        </div>
+        <button onclick="login()">Entrar</button>
+        <p id="loginError" class="error-message"></p>
+    </div>
+
+    <div id="mainContainer">
+        <h1>Sistema de Acompanhamento de Chamados</h1>
+        <button onclick="addNewTicket()">Adicionar Novo Chamado</button>
+        <button onclick="showDatabase()">Visualizar Banco de Dados</button>
+        <div id="ticketList"></div>
+
+        <div id="databaseView" style="display: none;">
+            <h2>Registros de Chamados</h2>
+            <div class="input-group">
+                <label>Filtrar por PR:</label>
+                <input type="text" id="filterPR">
+                <label>Filtrar por OP:</label>
+                <input type="text" id="filterOP">
+                <label>Filtrar por Mês:</label>
+                <input type="text" id="filterMonth" placeholder="MM">
+                <button onclick="applyFilters()">Aplicar Filtros</button>
+            </div>
+            <table id="databaseTable">
+                <thead>
+                    <tr>
+                        <th>TS</th>
+                        <th>NC</th>
+                        <th>PR</th>
+                        <th>OP</th>
+                        <th>EX</th>
+                        <th>HA</th>
+                        <th>HE</th>
+                        <th>Tempo</th>
+                        <th>Tempo Total</th>
+                    </tr>
+                </thead>
+                <tbody id="databaseTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const users = [
+            ["Jefão", "GG"],
+            ["Castelo", "OLA"],
+            ["Gabriel", "GAB"],
+            ["kaline", "1234"],
+            ["Julia", "JU"],
+            ["EU", "7777"],
+            ["Chefe", "BigBoss"],
+            ["Marcelo", "5454"]
+        ];
+
+        const operadores = ["", "Castelo", "Marcelo", "Julia", "kaline", "Gabriel", "Jeffeson"];
+        const executores = ["", "Airton", "Damião", "Daniel", "Alison"];
+        const problemas = ["", "Problema 1", "Problema 2", "Problema 3"];
+        const ncOpcoes = ["", "NC1", "NC2", "NC3", "NC4", "NC5"];
+
+        let database = JSON.parse(localStorage.getItem('ticketDatabase')) || [];
+        let timers = new Map();
+        let accumulatedTimes = new Map();
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            const user = users.find(u => u[0] === username && u[1] === password);
+            
+            if (user) {
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('mainContainer').style.display = 'block';
+            } else {
+                document.getElementById('loginError').textContent = 'Usuário ou senha incorretos';
+            }
+        }
+
+        function createSelect(options, id) {
+            const select = document.createElement('select');
+            select.id = id;
+            options.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option;
+                opt.textContent = option;
+                select.appendChild(opt);
+            });
+            return select;
+        }
+
+        function addNewTicket() {
+            const ticketList = document.getElementById('ticketList');
+            const ticketDiv = document.createElement('div');
+            ticketDiv.className = 'ticket-row';
+            
+            const fields = {
+                ts: document.createElement('input'),
+                nc: createSelect(ncOpcoes, 'nc'),
+                pr: createSelect(problemas, 'pr'),
+                op: createSelect(operadores, 'op'),
+                ex: createSelect(executores, 'ex'),
+                ha: document.createElement('input'),
+                he: document.createElement('input')
+            };
+
+            fields.ha.readOnly = true;
+            fields.ha.id = 'ha';
+            fields.he.readOnly = true;
+            fields.he.id = 'he';
+
+            Object.entries(fields).forEach(([key, field]) => {
+                const label = document.createElement('label');
+                label.textContent = key.toUpperCase() + ':';
+                ticketDiv.appendChild(label);
+                ticketDiv.appendChild(field);
+            });
+
+            const timerDisplay = document.createElement('div');
+            timerDisplay.className = 'timer';
+            timerDisplay.textContent = 'T: 00:00:00';
+            ticketDiv.setAttribute('data-timer-type', 'T');
+            ticketDiv.setAttribute('data-timer-state', 'stopped');
+            ticketDiv.setAttribute('data-accumulated-time', '0');
+            
+            const buttonContainer = document.createElement('div');
+            const buttonLabels = ['Iniciar', 'Pausar', 'Arquivar', 'Excluir'];
+            buttonLabels.forEach(text => {
+                const button = document.createElement('button');
+                button.textContent = text === 'Pausar' ? 'P' : text[0];
+                button.onclick = () => handleTicketAction(text.toLowerCase(), ticketDiv);
+                buttonContainer.appendChild(button);
+            });
+
+            ticketDiv.appendChild(timerDisplay);
+            ticketDiv.appendChild(buttonContainer);
+            ticketList.appendChild(ticketDiv);
+        }
+
+        function handleTicketAction(action, ticketDiv) {
+    switch(action) {
+        case 'iniciar':
+            if (ticketDiv.getAttribute('data-timer-state') === 'stopped') {
+                const currentTime = new Date().toLocaleTimeString();
+                ticketDiv.querySelector('input[id="ha"]').value = currentTime;
+                startTimer(ticketDiv);
+                ticketDiv.setAttribute('data-timer-state', 'running');
+            }
+            break;
+        case 'pausar':
+            const timerState = ticketDiv.getAttribute('data-timer-state');
+            const pauseButton = Array.from(ticketDiv.querySelectorAll('button')).find(b => b.textContent === 'PAUSAR' || b.textContent === 'DESPAUSAR');
+            
+            if (timerState === 'running') {
+                const currentTime = new Date().toLocaleTimeString();
+                ticketDiv.querySelector('input[id="he"]').value = currentTime;
+                const currentTimerValue = getTimerValue(ticketDiv);
+                ticketDiv.setAttribute('data-last-time', currentTimerValue.toString());
+                pauseTimer(ticketDiv);
+                ticketDiv.setAttribute('data-timer-state', 'stopped');
+                pauseButton.textContent = 'DESPAUSAR';
+            } else if (timerState === 'stopped') {
+                const lastTime = parseInt(ticketDiv.getAttribute('data-last-time')) || 0;
+                startTimer(ticketDiv, lastTime);
+                ticketDiv.setAttribute('data-timer-state', 'running');
+                pauseButton.textContent = 'PAUSAR';
+            }
+            break;
+        case 'arquivar':
+            archiveTicket(ticketDiv);
+            break;
+        case 'excluir':
+            validatePasswordAndExecute(() => {
+                if (timers.has(ticketDiv)) {
+                    clearInterval(timers.get(ticketDiv));
+                    timers.delete(ticketDiv);
+                }
+                ticketDiv.remove();
+            });
+            break;
+    }
+}
+
+function startTimer(ticketDiv, resumeFrom = null) {
+    const timerDisplay = ticketDiv.querySelector('.timer');
+    const ts = parseInt(ticketDiv.querySelector('input').value) || 0;
+    let timeLeft = resumeFrom !== null ? resumeFrom : ts;
+    let timerType = ticketDiv.getAttribute('data-timer-type');
+
+    const timer = setInterval(() => {
+        if (timerType === 'T' && timeLeft > 0) {
+            timeLeft--;
+            updateTimerDisplay(timerDisplay, timeLeft, 'T');
+            updateTicketColor(ticketDiv, timeLeft / ts);
+            
+            if (timeLeft === 0) {
+                timerType = 'A';
+                ticketDiv.setAttribute('data-timer-type', 'A');
+                timeLeft = 0;
+                ticketDiv.classList.add('red');
+            }
+        } else {
+            timeLeft++;
+            updateTimerDisplay(timerDisplay, timeLeft, 'A');
+            ticketDiv.classList.add('red');
+        }
+    }, 1000);
+
+    timers.set(ticketDiv, timer);
+}
+
+function getTimerValue(ticketDiv) {
+    const timerDisplay = ticketDiv.querySelector('.timer').textContent;
+    const [, timeStr] = timerDisplay.split(': ');
+    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+    return hours * 3600 + minutes * 60 + seconds;
+}
+
+function pauseTimer(ticketDiv) {
+    if (timers.has(ticketDiv)) {
+        clearInterval(timers.get(ticketDiv));
+        timers.delete(ticketDiv);
+    }
+}
+
+function updateTimerDisplay(display, time, prefix) {
+    const hours = Math.floor(time / 3600);
+    const minutes = Math.floor((time % 3600) / 60);
+    const seconds = time % 60;
+    display.textContent = `${prefix}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+        function updateTicketColor(ticketDiv, percentage) {
+            ticketDiv.className = 'ticket-row';
+            if (percentage > 0.75) ticketDiv.classList.add('green');
+            else if (percentage > 0.5) ticketDiv.classList.add('yellow');
+            else if (percentage > 0.25) ticketDiv.classList.add('orange');
+            else ticketDiv.classList.add('red');
+        }
+function addNewTicket() {
+            const ticketList = document.getElementById('ticketList');
+            const ticketDiv = document.createElement('div');
+            ticketDiv.className = 'ticket-row';
+            
+            const fields = {
+                ts: document.createElement('input'),
+                nc: createSelect(ncOpcoes, 'nc'),
+                pr: createSelect(problemas, 'pr'),
+                op: createSelect(operadores, 'op'),
+                ex: createSelect(executores, 'ex'),
+                ha: document.createElement('input'),
+                he: document.createElement('input')
+            };
+
+            // Configurar o campo TS para aceitar formato H:M:S
+            fields.ts.className = 'input-time';
+            fields.ts.placeholder = 'H:M:S';
+            fields.ts.addEventListener('input', function(e) {
+                let value = e.target.value;
+                // Remove qualquer caractere que não seja número ou :
+                value = value.replace(/[^\d:]/g, '');
+                
+                // Divide a string nos :
+                let parts = value.split(':');
+                
+                // Limita a 3 partes (H:M:S)
+                parts = parts.slice(0, 3);
+                
+                // Para cada parte, garante que tenha no máximo 2 dígitos
+                parts = parts.map(part => part.slice(0, 2));
+                
+                // Junta novamente com :
+                e.target.value = parts.join(':');
+                
+                // Atualiza o timer quando o formato estiver completo (H:M:S)
+                if (isValidTimeFormat(e.target.value)) {
+                    const seconds = timeToSeconds(e.target.value);
+                    ticketDiv.setAttribute('data-total-seconds', seconds.toString());
+                }
+            });
+
+            fields.ts.addEventListener('blur', function(e) {
+                // Formata o valor quando o campo perde o foco
+                if (e.target.value) {
+                    let parts = e.target.value.split(':');
+                    // Preenche com zeros à esquerda se necessário
+                    parts = parts.map(part => part.padStart(2, '0'));
+                    // Adiciona partes faltantes como 00
+                    while (parts.length < 3) parts.push('00');
+                    e.target.value = parts.join(':');
+                }
+            });
+
+            fields.ha.readOnly = true;
+            fields.ha.id = 'ha';
+            fields.he.readOnly = true;
+            fields.he.id = 'he';
+
+            Object.entries(fields).forEach(([key, field]) => {
+                const label = document.createElement('label');
+                label.textContent = key.toUpperCase() + ':';
+                ticketDiv.appendChild(label);
+                ticketDiv.appendChild(field);
+            });
+
+            const timerDisplay = document.createElement('div');
+            timerDisplay.className = 'timer';
+            timerDisplay.textContent = 'T: 00:00:00';
+            ticketDiv.setAttribute('data-timer-type', 'T');
+            ticketDiv.setAttribute('data-timer-state', 'stopped');
+            ticketDiv.setAttribute('data-accumulated-time', '0');
+            
+            const buttonContainer = document.createElement('div');
+            const buttonLabels = ['Iniciar', 'Pausar', 'Arquivar', 'Excluir'];
+            buttonLabels.forEach(text => {
+                const button = document.createElement('button');
+                button.textContent = text === 'Pausar' ? 'P' : text[0];
+                button.onclick = () => handleTicketAction(text.toLowerCase(), ticketDiv);
+                buttonContainer.appendChild(button);
+            });
+
+            ticketDiv.appendChild(timerDisplay);
+            ticketDiv.appendChild(buttonContainer);
+            ticketList.appendChild(ticketDiv);
+        }
+
+        function isValidTimeFormat(timeStr) {
+            return /^\d{1,2}:\d{1,2}:\d{1,2}$/.test(timeStr);
+        }
+
+        function timeToSeconds(timeStr) {
+            const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+            return hours * 3600 + minutes * 60 + seconds;
+        }
+
+        function startTimer(ticketDiv, resumeFrom = null) {
+            const timerDisplay = ticketDiv.querySelector('.timer');
+            const tsInput = ticketDiv.querySelector('input');
+            const ts = timeToSeconds(tsInput.value || '0:0:0');
+            let timeLeft = resumeFrom !== null ? resumeFrom : ts;
+            let timerType = ticketDiv.getAttribute('data-timer-type');
+
+            const timer = setInterval(() => {
+                if (timerType === 'T' && timeLeft > 0) {
+                    timeLeft--;
+                    updateTimerDisplay(timerDisplay, timeLeft, 'T');
+                    updateTicketColor(ticketDiv, timeLeft / ts);
+                    
+                    if (timeLeft === 0) {
+                        timerType = 'A';
+                        ticketDiv.setAttribute('data-timer-type', 'A');
+                        timeLeft = 0;
+                        ticketDiv.classList.add('red');
+                    }
+                } else {
+                    timeLeft++;
+                    updateTimerDisplay(timerDisplay, timeLeft, 'A');
+                    ticketDiv.classList.add('red');
+                }
+            }, 1000);
+
+            timers.set(ticketDiv, timer);
+        }
+        function archiveTicket(ticketDiv) {
+            validatePasswordAndExecute(() => {
+                const ticket = {
+                    ts: ticketDiv.querySelector('input').value,
+                    nc: ticketDiv.querySelector('select[id="nc"]').value,
+                    pr: ticketDiv.querySelector('select[id="pr"]').value,
+                    op: ticketDiv.querySelector('select[id="op"]').value,
+                    ex: ticketDiv.querySelector('select[id="ex"]').value,
+                    ha: ticketDiv.querySelector('input[id="ha"]').value,
+                    he: ticketDiv.querySelector('input[id="he"]').value,
+                    tempo: ticketDiv.querySelector('.timer').textContent,
+                    tempo_total: calculateTotalTime(ticketDiv)
+                };
+
+                database.push(ticket);
+                localStorage.setItem('ticketDatabase', JSON.stringify(database));
+                
+                if (timers.has(ticketDiv)) {
+                    clearInterval(timers.get(ticketDiv));
+                    timers.delete(ticketDiv);
+                }
+                
+                ticketDiv.remove();
+            });
+        }
+
+        function validatePasswordAndExecute(callback) {
+            const password = prompt('Digite a senha para confirmar:');
+            if (users.some(u => u[1] === password)) {
+                callback();
+            } else {
+                alert('Senha incorreta!');
+            }
+        }
+
+        function calculateTotalTime(ticketDiv) {
+            const ha = ticketDiv.querySelector('input[id="ha"]').value;
+            const he = ticketDiv.querySelector('input[id="he"]').value;
+            if (!ha || !he) return "00:00:00";
+            
+            const start = new Date(`1970/01/01 ${ha}`);
+            const end = new Date(`1970/01/01 ${he}`);
+            const diff = Math.floor((end - start) / 1000);
+            
+            const hours = Math.floor(diff / 3600);
+            const minutes = Math.floor((diff % 3600) / 60);
+            const seconds = diff % 60;
+            
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function showDatabase() {
+            const databaseView = document.getElementById('databaseView');
+            databaseView.style.display = databaseView.style.display === 'none' ? 'block' : 'none';
+            if (databaseView.style.display ==='block') {
+                updateDatabaseTable();
+            }
+        }
+
+        function updateDatabaseTable(filters = {}) {
+            const tbody = document.getElementById('databaseTableBody');
+            tbody.innerHTML = '';
+            
+            let filteredData = database;
+            if (filters.pr) filteredData = filteredData.filter(t => t.pr.includes(filters.pr));
+            if (filters.op) filteredData = filteredData.filter(t => t.op.includes(filters.op));
+            if (filters.month) {
+                filteredData = filteredData.filter(t => {
+                    const ticketMonth = new Date(t.ha).getMonth() + 1;
+                    return String(ticketMonth).padStart(2, '0') === filters.month;
+                });
+            }
+
+            filteredData.forEach(ticket => {
+                const row = tbody.insertRow();
+                Object.values(ticket).forEach(value => {
+                    const cell = row.insertCell();
+                    cell.textContent = value;
+                });
+            });
+        }
+
+        function applyFilters() {
+            const filters = {
+                pr: document.getElementById('filterPR').value,
+                op: document.getElementById('filterOP').value,
+                month: document.getElementById('filterMonth').value
+            };
+            updateDatabaseTable(filters);
+        }
+    </script>
+</body>
+</html>
