@@ -434,10 +434,10 @@ function addNewTicket() {
             ticketDiv.setAttribute('data-accumulated-time', '0');
             
             const buttonContainer = document.createElement('div');
-            const buttonLabels = ['Iniciar', 'Pausar', 'Arquivar', 'Excluir'];
+            const buttonLabels = ['IINICIAR', 'PAUSAR', 'ARQUIVAR', 'EXCLUIR'];
             buttonLabels.forEach(text => {
                 const button = document.createElement('button');
-                button.textContent = text === 'Pausar' ? 'PAUSAR' : text[0];
+                button.textContent = text; 'IINICIAR', 'PAUSAR', 'ARQUIVAR', 'EXCLUIR'
                 button.onclick = () => handleTicketAction(text.toLowerCase(), ticketDiv);
                 buttonContainer.appendChild(button);
             });
