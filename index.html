@@ -149,15 +149,15 @@
             <table id="databaseTable">
                 <thead>
                     <tr>
-                        <th>TS</th>
-                        <th>NC</th>
-                        <th>PR</th>
-                        <th>OP</th>
-                        <th>EX</th>
-                        <th>HA</th>
-                        <th>HE</th>
-                        <th>Tempo</th>
-                        <th>Tempo Total</th>
+                        <th>TEMPO</th>
+                        <th>CLIENTE</th>
+                        <th>PROBLEMA</th>
+                        <th>OPERADOR</th>
+                        <th>EXECULTOR</th>
+                        <th>HORA DE ABERTURA</th>
+                        <th>HORA DE ENCERRAMENTOE</th>
+                        <th>HORA DO ARQUIVO</th>
+                        <th>TEMPO TOTAL</th>
                     </tr>
                 </thead>
                 <tbody id="databaseTableBody"></tbody>
@@ -167,14 +167,14 @@
 
     <script>
         const users = [
-            ["Jefão", "123"],
-            ["Castelo", "123"],
-            ["Gabriel", "123"],
-            ["kaline", "123"],
-            ["Julia", "123"],
-            ["Virgilio", "123"],
-            ["James", "123"],
-            ["Marcelo", "123"]
+            ["Jefferson", "123@456"],
+            ["Castelo", "123@456"],
+            ["Gabriel", "123@456"],
+            ["kaline", "123@456"],
+            ["Julia", "123@456"],
+            ["Virgilio", "123@456"],
+            ["James", "123@456"],
+            ["Marcelo", "123@456"]
         ];
 
         const operadores = ["", "Castelo", "Marcelo", "Julia", "kaline", "Gabriel", "Jeffeson"];
@@ -219,10 +219,10 @@
             
             const fields = {
                 ts: document.createElement('input'),
-                nc: createSelect(ncOpcoes, 'nc'),
-                pr: createSelect(problemas, 'pr'),
-                op: createSelect(operadores, 'op'),
-                ex: createSelect(executores, 'ex'),
+                nc: createSelect(ncOpcoes, 'CLIENTE'),
+                pr: createSelect(problemas, 'PROBLEMA'),
+                op: createSelect(operadores, 'OPERADOR'),
+                ex: createSelect(executores, 'EXECULTOR'),
                 ha: document.createElement('input'),
                 he: document.createElement('input')
             };
@@ -367,10 +367,10 @@ function addNewTicket() {
             
             const fields = {
                 ts: document.createElement('input'),
-                nc: createSelect(ncOpcoes, 'nc'),
-                pr: createSelect(problemas, 'pr'),
-                op: createSelect(operadores, 'op'),
-                ex: createSelect(executores, 'ex'),
+                CLIENTE: createSelect(ncOpcoes, 'CLIENTE'),
+                PROBLEMA: createSelect(problemas, 'PROBLEMA'),
+                OPERADOR: createSelect(operadores, 'OPERADOR'),
+                EXECULTOR: createSelect(executores, 'EXECULTOR'),
                 ha: document.createElement('input'),
                 he: document.createElement('input')
             };
@@ -437,7 +437,7 @@ function addNewTicket() {
             const buttonLabels = ['Iniciar', 'Pausar', 'Arquivar', 'Excluir'];
             buttonLabels.forEach(text => {
                 const button = document.createElement('button');
-                button.textContent = text === 'Pausar' ? 'P' : text[0];
+                button.textContent = text === 'Pausar' ? 'PAUSAR' : text[0];
                 button.onclick = () => handleTicketAction(text.toLowerCase(), ticketDiv);
                 buttonContainer.appendChild(button);
             });
@@ -487,7 +487,7 @@ function addNewTicket() {
         function archiveTicket(ticketDiv) {
             validatePasswordAndExecute(() => {
                 const ticket = {
-                    ts: ticketDiv.querySelector('input').value,
+                    TEMPO: ticketDiv.querySelector('input').value,
                     nc: ticketDiv.querySelector('select[id="nc"]').value,
                     pr: ticketDiv.querySelector('select[id="pr"]').value,
                     op: ticketDiv.querySelector('select[id="op"]').value,
