@@ -10,6 +10,7 @@
             box-sizing: border-box;
             font-family: Arial, sans-serif;
         }
+}
 
         body {
             padding: 20px;
@@ -167,14 +168,14 @@
 
     <script>
         const users = [
-            ["Jefferson", "123@456"],
-            ["Castelo", "123@456"],
-            ["Gabriel", "123@456"],
-            ["kaline", "123@456"],
-            ["Julia", "123@456"],
-            ["Virgilio", "123@456"],
-            ["James", "123@456"],
-            ["Marcelo", "123@456"]
+            ["Jefferson", "123"],
+            ["Castelo", "123123"],
+            ["Gabriel", "123123"],
+            ["kaline", "123123"],
+            ["Julia", "123123"],
+            ["Virgilio", "123123"],
+            ["James", "123123"],
+            ["Marcelo", "123123"]
         ];
 
         const operadores = ["", "Castelo", "Marcelo", "Julia", "kaline", "Gabriel", "Jeffeson"];
@@ -262,8 +263,13 @@
 
         function handleTicketAction(action, ticketDiv) {
     switch(action) {
-        case 'iniciar':
+        case 'iiniciar':  // Note que agora está em minúsculo e com dois "i"
             if (ticketDiv.getAttribute('data-timer-state') === 'stopped') {
+                const tsInput = ticketDiv.querySelector('.input-time');
+                if (!tsInput.value || !isValidTimeFormat(tsInput.value)) {
+                    alert('Por favor, insira um tempo válido no formato H:M:S');
+                    return;
+                }
                 const currentTime = new Date().toLocaleTimeString();
                 ticketDiv.querySelector('input[id="ha"]').value = currentTime;
                 startTimer(ticketDiv);
@@ -272,8 +278,6 @@
             break;
         case 'pausar':
             const timerState = ticketDiv.getAttribute('data-timer-state');
-            const pauseButton = Array.from(ticketDiv.querySelectorAll('button')).find(b => b.textContent === 'PAUSAR' || b.textContent === 'DESPAUSAR');
-            
             if (timerState === 'running') {
                 const currentTime = new Date().toLocaleTimeString();
                 ticketDiv.querySelector('input[id="he"]').value = currentTime;
@@ -281,12 +285,10 @@
                 ticketDiv.setAttribute('data-last-time', currentTimerValue.toString());
                 pauseTimer(ticketDiv);
                 ticketDiv.setAttribute('data-timer-state', 'stopped');
-                pauseButton.textContent = 'DESPAUSAR';
             } else if (timerState === 'stopped') {
                 const lastTime = parseInt(ticketDiv.getAttribute('data-last-time')) || 0;
                 startTimer(ticketDiv, lastTime);
                 ticketDiv.setAttribute('data-timer-state', 'running');
-                pauseButton.textContent = 'PAUSAR';
             }
             break;
         case 'arquivar':
@@ -302,6 +304,61 @@
             });
             break;
     }
+}
+
+// Função addNewTicket corrigida (parte relevante)
+function addNewTicket() {
+    // ... (código anterior permanece igual)
+    
+    const buttonContainer = document.createElement('div');
+    const buttonLabels = ['IINICIAR', 'PAUSAR', 'ARQUIVAR', 'EXCLUIR'];
+    buttonLabels.forEach(text => {
+        const button = document.createElement('button');
+        button.textContent = text;
+        button.onclick = () => handleTicketAction(text.toLowerCase(), ticketDiv);
+        buttonContainer.appendChild(button);
+    });
+    
+    // ... (resto do código permanece igual)
+}
+
+// Função auxiliar para validar o formato do tempo
+function isValidTimeFormat(timeStr) {
+    return /^\d{1,2}:\d{1,2}:\d{1,2}$/.test(timeStr);
+}
+
+// Função startTimer corrigida
+function startTimer(ticketDiv, resumeFrom = null) {
+    const timerDisplay = ticketDiv.querySelector('.timer');
+    const tsInput = ticketDiv.querySelector('.input-time');
+    const ts = timeToSeconds(tsInput.value || '0:0:0');
+    let timeLeft = resumeFrom !== null ? resumeFrom : ts;
+    let timerType = ticketDiv.getAttribute('data-timer-type');
+
+    if (timers.has(ticketDiv)) {
+        clearInterval(timers.get(ticketDiv));
+    }
+
+    const timer = setInterval(() => {
+        if (timerType === 'T' && timeLeft > 0) {
+            timeLeft--;
+            updateTimerDisplay(timerDisplay, timeLeft, 'T');
+            updateTicketColor(ticketDiv, timeLeft / ts);
+            
+            if (timeLeft === 0) {
+                timerType = 'A';
+                ticketDiv.setAttribute('data-timer-type', 'A');
+                timeLeft = 0;
+                ticketDiv.classList.add('red');
+            }
+        } else {
+            timeLeft++;
+            updateTimerDisplay(timerDisplay, timeLeft, 'A');
+            ticketDiv.classList.add('red');
+        }
+    }, 1000);
+
+    timers.set(ticketDiv, timer);
 }
 
 function startTimer(ticketDiv, resumeFrom = null) {
