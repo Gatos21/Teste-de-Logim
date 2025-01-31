@@ -180,8 +180,8 @@
 
         const operadores = ["", "Castelo", "Marcelo", "Julia", "kaline", "Gabriel", "Jeffeson"];
         const executores = ["", "Airton", "Damião", "Daniel", "Alison"];
-        const problemas = ["", "Problema 1", "Problema 2", "Problema 3"];
-        const ncOpcoes = ["",]
+        const problemas = ["", "Acesso Lento","Acréscimo de canais","Adição de equipamento","Ajuste no IPV6","Ativação de Link","Ativação de Telefonia","Cliente entrou em contato pedindo uma informação tecnica","Falha elétrica no cliente”,“Falha elétrica no POP da Inovanet","Falha no equipamento da Inovanet","Falha no fornecimento de internet pela ALGAR","Falha no fornecimento de internet pela BR DIGITAL","Falha no link de transporte","Help Desk Presencial","Help Desk Remoto","Help Desk Telefonia","implantar cabo de internet","Mudança de endereço","Mudança de Equipamentos","Mudança de Local do Aparelho","Operadora de telefonia com falha de rotas","Orçamento","Outros","Portabilidade da linha","Problema na Hybrid","Problemas com páginas","Problemas no VOIP","Recolher equipamento","Rompimento do Backbone em Natal","Rompimento do drop do cliente em Ceará-Mirim","Rompimento do drop do cliente em Mossoró","Rompimento do drop do cliente em Natal","Rompimento do drop do cliente em Parnamirim","Rompimento no drop em STO","Rompimento no transporte da Intelnet","Rompimento no transporte para Ceará-Mirim","Rompimento no transporte para São José de Mipibu","Sem Acesso","Sem ping","Solicitação BGP","Solicitação de linha nova","Troca de CEO","Troca de conector tipo click","Troca de conector tipo RJ45","Troca de CTO","Troca de DROP","Troca de fonte com defeito","Troca de splitter"];
+        const ncOpcoes = ["","CLIENTE1"]
         let database = JSON.parse(localStorage.getItem('ticketDatabase')) || [];
         let timers = new Map();
         let accumulatedTimes = new Map();
@@ -548,23 +548,22 @@ function addNewTicket() {
                     problema: ticketDiv.querySelector('select[id="PROBLEMA"]').value,
                     operador: ticketDiv.querySelector('select[id="OPERADOR"]').value,
                     executor: ticketDiv.querySelector('select[id="EXECULTOR"]').value,
-                    inicio: new Date().toLocaleDateString('pt-BR'), // Data no formato brasileiro
+                    inicio: ticketDiv.querySelector('input[id="ha"]').value,
                     arquivado_por: username,
-                    tempo_decorrido: ticketDiv.querySelector('.timer').textContent,
-                    tempo_execucao: calculateTotalTime(ticketDiv) // Adiciona tempo de execução
-        };
+                    tempo_decorrido: ticketDiv.querySelector('.timer').textContent
+                };
 
-        database.push(ticket);
-        localStorage.setItem('ticketDatabase', JSON.stringify(database));
-
-        if (timers.has(ticketDiv)) {
-            clearInterval(timers.get(ticketDiv));
-            timers.delete(ticketDiv);
-        }
-
-        ticketDiv.remove();
-        alert('Chamado arquivado com sucesso!');
-    });
+                database.push(ticket);
+                localStorage.setItem('ticketDatabase', JSON.stringify(database));
+        
+                if (timers.has(ticketDiv)) {
+                clearInterval(timers.get(ticketDiv));
+                timers.delete(ticketDiv);
+            }
+        
+                ticketDiv.remove();
+                alert('Chamado arquivado com sucesso!');
+        });
 }
 
         function validatePasswordAndExecute(callback) {
@@ -583,19 +582,18 @@ function addNewTicket() {
         function calculateTotalTime(ticketDiv) {
             const ha = ticketDiv.querySelector('input[id="ha"]').value;
             const he = ticketDiv.querySelector('input[id="he"]').value;
-    
             if (!ha || !he) return "00:00:00";
-    
-            const startTime = new Date(`1970/01/01 ${ha}`);
-            const endTime = new Date(`1970/01/01 ${he}`);
-            const diff = Math.abs(endTime - startTime);
-    
-            const hours = Math.floor(diff / 3600000);
-            const minutes = Math.floor((diff % 3600000) / 60000);
-            const seconds = Math.floor((diff % 60000) / 1000);
-    
+            
+            const start = new Date(`1970/01/01 ${ha}`);
+            const end = new Date(`1970/01/01 ${he}`);
+            const diff = Math.floor((end - start) / 1000);
+            
+            const hours = Math.floor(diff / 3600);
+            const minutes = Math.floor((diff % 3600) / 60);
+            const seconds = diff % 60;
+            
             return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-}
+        }
 
         function showDatabase() {
             const databaseView = document.getElementById('databaseView');
@@ -608,36 +606,24 @@ function addNewTicket() {
         function updateDatabaseTable(filters = {}) {
             const tbody = document.getElementById('databaseTableBody');
             tbody.innerHTML = '';
-
-            let filteredData = database;
-            if (filters.pr) filteredData = filteredData.filter(t => t.problema.includes(filters.pr));
-            if (filters.op) filteredData = filteredData.filter(t => t.operador.includes(filters.op));
     
+            let filteredData = database;
+            if (filters.pr) filteredData = filteredData.filter(t => t.pr.includes(filters.pr));
+            if (filters.op) filteredData = filteredData.filter(t => t.op.includes(filters.op));
             if (filters.month) {
                 filteredData = filteredData.filter(t => {
-                    const [ticketYear, ticketMonth] = t.inicio.split('-').map(Number);
-                    const [filterYear, filterMonth] = filters.month.split('-').map(Number);
-                    return ticketYear === filterYear && ticketMonth === filterMonth;
+                    const ticketDate = new Date(t.ha);
+                    const filterDate = new Date(filters.month);
+                    return ticketDate.getMonth() === filterDate.getMonth() && 
+                           ticketDate.getFullYear() === filterDate.getFullYear();
         });
     }
 
     filteredData.forEach(ticket => {
         const row = tbody.insertRow();
-        const fieldsToShow = [
-            'tempo_previsto', 
-            'cliente', 
-            'problema', 
-            'operador', 
-            'executor', 
-            'inicio', 
-            'arquivado_por', 
-            'tempo_decorrido',
-            ticket.tempo_execucao || calculateTotalTime(ticket) // Adiciona tempo de execução
-        ];
-        
-        fieldsToShow.forEach(field => {
+        Object.values(ticket).forEach(value => {
             const cell = row.insertCell();
-            cell.textContent = ticket[field] || '';
+            cell.textContent = value;
         });
     });
 }
