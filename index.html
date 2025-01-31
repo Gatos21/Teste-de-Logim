@@ -139,12 +139,12 @@
         <div id="databaseView" style="display: none;">
             <h2>Registros de Chamados</h2>
             <div class="input-group">
-                <label>Filtrar por PR:</label>
+                <label>Filtrar por PROBLEMA:</label>
                 <input type="text" id="filterPR">
-                <label>Filtrar por OP:</label>
+                <label>Filtrar por OPERADOR:</label>
                 <input type="text" id="filterOP">
-                <label>Filtrar por Mês:</label>
-                <input type="text" id="filterMonth" placeholder="MM">
+                <label>Filtrar por MÊS:</label>
+                <input type="month" id="filterMonth">
                 <button onclick="applyFilters()">Aplicar Filtros</button>
             </div>
             <table id="databaseTable">
@@ -156,9 +156,9 @@
                         <th>OPERADOR</th>
                         <th>EXECULTOR</th>
                         <th>HORA DE ABERTURA</th>
-                        <th>HORA DE ENCERRAMENTOE</th>
-                        <th>HORA DO ARQUIVO</th>
-                        <th>TEMPO TOTAL</th>
+                        <th>ARQUIVADO POR:</th>
+                        <th>HORA DE ENCERRAMENTO</th>
+                        <th>TEMPO DE EXECUÇÃO</th>
                     </tr>
                 </thead>
                 <tbody id="databaseTableBody"></tbody>
@@ -181,8 +181,7 @@
         const operadores = ["", "Castelo", "Marcelo", "Julia", "kaline", "Gabriel", "Jeffeson"];
         const executores = ["", "Airton", "Damião", "Daniel", "Alison"];
         const problemas = ["", "Problema 1", "Problema 2", "Problema 3"];
-        const ncOpcoes = ["", "NC1", "NC2", "NC3", "NC4", "NC5"];
-
+        const ncOpcoes = ["","Acesso Lento","Acréscimo de canais","Adição de equipamento","Ajuste no IPV6","Ativação de Link","Ativação de Telefonia","Cliente entrou em contato pedindo uma informação tecnica","Falha elétrica no cliente”,“Falha elétrica no POP da Inovanet","Falha no equipamento da Inovanet","Falha no fornecimento de internet pela ALGAR","Falha no fornecimento de internet pela BR DIGITAL","Falha no link de transporte","Help Desk Presencial","Help Desk Remoto","Help Desk Telefonia","implantar cabo de internet","Mudança de endereço","Mudança de Equipamentos","Mudança de Local do Aparelho","Operadora de telefonia com falha de rotas","Orçamento","Outros","Portabilidade da linha","Problema na Hybrid","Problemas com páginas","Problemas no VOIP","Recolher equipamento","Rompimento do Backbone em Natal","Rompimento do drop do cliente em Ceará-Mirim","Rompimento do drop do cliente em Mossoró","Rompimento do drop do cliente em Natal","Rompimento do drop do cliente em Parnamirim","Rompimento no drop em STO","Rompimento no transporte da Intelnet","Rompimento no transporte para Ceará-Mirim","Rompimento no transporte para São José de Mipibu","Sem Acesso","Sem ping","Solicitação BGP","Solicitação de linha nova","Troca de CEO","Troca de conector tipo click","Troca de conector tipo RJ45","Troca de CTO","Troca de DROP","Troca de fonte com defeito","Troca de splitter"]
         let database = JSON.parse(localStorage.getItem('ticketDatabase')) || [];
         let timers = new Map();
         let accumulatedTimes = new Map();
@@ -542,39 +541,43 @@ function addNewTicket() {
             timers.set(ticketDiv, timer);
         }
         function archiveTicket(ticketDiv) {
-            validatePasswordAndExecute(() => {
+            validatePasswordAndExecute((username) => {
                 const ticket = {
-                    TEMPO: ticketDiv.querySelector('input').value,
-                    nc: ticketDiv.querySelector('select[id="nc"]').value,
-                    pr: ticketDiv.querySelector('select[id="pr"]').value,
-                    op: ticketDiv.querySelector('select[id="op"]').value,
-                    ex: ticketDiv.querySelector('select[id="ex"]').value,
-                    ha: ticketDiv.querySelector('input[id="ha"]').value,
-                    he: ticketDiv.querySelector('input[id="he"]').value,
-                    tempo: ticketDiv.querySelector('.timer').textContent,
-                    tempo_total: calculateTotalTime(ticketDiv)
+                    tempo_previsto: ticketDiv.querySelector('.input-time').value,
+                    cliente: ticketDiv.querySelector('select[id="CLIENTE"]').value,
+                    problema: ticketDiv.querySelector('select[id="PROBLEMA"]').value,
+                    operador: ticketDiv.querySelector('select[id="OPERADOR"]').value,
+                    executor: ticketDiv.querySelector('select[id="EXECULTOR"]').value,
+                    inicio: ticketDiv.querySelector('input[id="ha"]').value,
+                    arquivado_por: username,
+                    tempo_decorrido: ticketDiv.querySelector('.timer').textContent
                 };
 
                 database.push(ticket);
                 localStorage.setItem('ticketDatabase', JSON.stringify(database));
-                
+        
                 if (timers.has(ticketDiv)) {
-                    clearInterval(timers.get(ticketDiv));
-                    timers.delete(ticketDiv);
-                }
-                
+                clearInterval(timers.get(ticketDiv));
+                timers.delete(ticketDiv);
+            }
+        
                 ticketDiv.remove();
-            });
-        }
+                alert('Chamado arquivado com sucesso!');
+        });
+}
 
         function validatePasswordAndExecute(callback) {
-            const password = prompt('Digite a senha para confirmar:');
-            if (users.some(u => u[1] === password)) {
-                callback();
-            } else {
-                alert('Senha incorreta!');
-            }
-        }
+            const username = prompt('Digite seu nome de usuário:');
+            const password = prompt('Digite sua senha:');
+    
+            const user = users.find(u => u[0] === username && u[1] === password);
+    
+            if (user) {
+                callback(username); // Passa o nome do usuário para o callback
+        } else {
+                alert('Usuário ou senha incorretos!');
+    }
+}
 
         function calculateTotalTime(ticketDiv) {
             const ha = ticketDiv.querySelector('input[id="ha"]').value;
@@ -603,34 +606,37 @@ function addNewTicket() {
         function updateDatabaseTable(filters = {}) {
             const tbody = document.getElementById('databaseTableBody');
             tbody.innerHTML = '';
-            
+    
             let filteredData = database;
             if (filters.pr) filteredData = filteredData.filter(t => t.pr.includes(filters.pr));
             if (filters.op) filteredData = filteredData.filter(t => t.op.includes(filters.op));
             if (filters.month) {
                 filteredData = filteredData.filter(t => {
-                    const ticketMonth = new Date(t.ha).getMonth() + 1;
-                    return String(ticketMonth).padStart(2, '0') === filters.month;
-                });
-            }
+                    const ticketDate = new Date(t.ha);
+                    const filterDate = new Date(filters.month);
+                    return ticketDate.getMonth() === filterDate.getMonth() && 
+                           ticketDate.getFullYear() === filterDate.getFullYear();
+        });
+    }
 
-            filteredData.forEach(ticket => {
-                const row = tbody.insertRow();
-                Object.values(ticket).forEach(value => {
-                    const cell = row.insertCell();
-                    cell.textContent = value;
-                });
-            });
-        }
+    filteredData.forEach(ticket => {
+        const row = tbody.insertRow();
+        Object.values(ticket).forEach(value => {
+            const cell = row.insertCell();
+            cell.textContent = value;
+        });
+    });
+}
 
         function applyFilters() {
             const filters = {
                 pr: document.getElementById('filterPR').value,
                 op: document.getElementById('filterOP').value,
-                month: document.getElementById('filterMonth').value
-            };
-            updateDatabaseTable(filters);
-        }
+                month: document.getElementById('filterMonth').value // Agora retorna YYYY-MM
+        };
+    updateDatabaseTable(filters);
+}
+
     </script>
 </body>
 </html>
