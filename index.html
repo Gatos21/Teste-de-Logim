@@ -168,7 +168,7 @@
 
     <script>
         const users = [
-            ["Jefferson", "123"],
+            ["Jeffeson", "123"],
             ["Castelo", "123123"],
             ["Gabriel", "123123"],
             ["kaline", "123123"],
@@ -548,22 +548,23 @@ function addNewTicket() {
                     problema: ticketDiv.querySelector('select[id="PROBLEMA"]').value,
                     operador: ticketDiv.querySelector('select[id="OPERADOR"]').value,
                     executor: ticketDiv.querySelector('select[id="EXECULTOR"]').value,
-                    inicio: ticketDiv.querySelector('input[id="ha"]').value,
+                    inicio: new Date().toISOString(), // Salva a data completa para filtrar depois
                     arquivado_por: username,
+                    fim: new Date().toLocaleTimeString(),
                     tempo_decorrido: ticketDiv.querySelector('.timer').textContent
-                };
+        };
 
                 database.push(ticket);
                 localStorage.setItem('ticketDatabase', JSON.stringify(database));
-        
+
                 if (timers.has(ticketDiv)) {
-                clearInterval(timers.get(ticketDiv));
-                timers.delete(ticketDiv);
-            }
-        
-                ticketDiv.remove();
-                alert('Chamado arquivado com sucesso!');
-        });
+                    clearInterval(timers.get(ticketDiv));
+                    timers.delete(ticketDiv);
+        }
+
+        ticketDiv.remove();
+        alert('Chamado arquivado com sucesso!');
+    });
 }
 
         function validatePasswordAndExecute(callback) {
@@ -606,22 +607,51 @@ function addNewTicket() {
         function updateDatabaseTable(filters = {}) {
             const tbody = document.getElementById('databaseTableBody');
             tbody.innerHTML = '';
-    
-            let filteredData = database;
-            if (filters.pr) filteredData = filteredData.filter(t => t.pr.includes(filters.pr));
-            if (filters.op) filteredData = filteredData.filter(t => t.op.includes(filters.op));
-            if (filters.month) {
+
+            console.log('Database:', database); // Para debug
+            console.log('Filtros aplicados:', filters); // Para debug
+
+            let filteredData = [...database];
+
+            if (filters.problema && filters.problema.trim() !== '') {
                 filteredData = filteredData.filter(t => {
-                    const ticketDate = new Date(t.ha);
-                    const filterDate = new Date(filters.month);
-                    return ticketDate.getMonth() === filterDate.getMonth() && 
-                           ticketDate.getFullYear() === filterDate.getFullYear();
+                    return t.problema && t.problema.toLowerCase().includes(filters.problema.toLowerCase());
+        });
+    }
+            if (filters.operador && filters.operador.trim() !== '') {
+                filteredData = filteredData.filter(t => {
+                    return t.operador && t.operador.toLowerCase().includes(filters.operador.toLowerCase());
+        });
+    }
+    if (filters.month && filters.month.trim() !== '') {
+        const [filterYear, filterMonth] = filters.month.split('-');
+        filteredData = filteredData.filter(t => {
+            if (!t.inicio) return false;
+            const ticketDate = new Date(t.inicio);
+            if (isNaN(ticketDate.getTime())) return false;
+
+            return ticketDate.getFullYear() === parseInt(filterYear) &&
+                   ticketDate.getMonth() === (parseInt(filterMonth) - 1);
         });
     }
 
+    console.log('Dados filtrados:', filteredData);
+
     filteredData.forEach(ticket => {
         const row = tbody.insertRow();
-        Object.values(ticket).forEach(value => {
+        const cells = [
+            ticket.tempo_previsto || '',
+            ticket.cliente || '',
+            ticket.problema || '',
+            ticket.operador || '',
+            ticket.executor || '',
+            ticket.inicio ? new Date(ticket.inicio).toLocaleString() : '',
+            ticket.arquivado_por || '',
+            ticket.fim || '',
+            ticket.tempo_decorrido || ''
+        ];
+
+        cells.forEach(value => {
             const cell = row.insertCell();
             cell.textContent = value;
         });
@@ -630,11 +660,22 @@ function addNewTicket() {
 
         function applyFilters() {
             const filters = {
-                pr: document.getElementById('filterPR').value,
-                op: document.getElementById('filterOP').value,
-                month: document.getElementById('filterMonth').value // Agora retorna YYYY-MM
-        };
-    updateDatabaseTable(filters);
+                problema: document.getElementById('filterPR').value,
+                operador: document.getElementById('filterOP').value,
+                month: document.getElementById('filterMonth').value
+                
+    };
+
+        console.log('Aplicando filtros:', filters); // Para debug
+        updateDatabaseTable(filters);
+}
+
+function clearDatabase() {
+    if (confirm('Tem certeza que deseja limpar o banco de dados?')) {
+        database = [];
+        localStorage.setItem('ticketDatabase', JSON.stringify(database));
+        updateDatabaseTable();
+    }
 }
 
     </script>
