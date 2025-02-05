@@ -17,6 +17,7 @@
             background-color: #f0f0f0;
         }
 
+
         #loginContainer {
             max-width: 300px;
             margin: 50px auto;
@@ -44,6 +45,27 @@
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
+        }
+
+        #slaStatistics {
+            display: flex;
+            justify-content: space-between;
+            background-color: #f4f4f4;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+
+        #slaStatistics .sla-stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        #slaStatistics .sla-stats div {
+            background-color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         input, select {
@@ -130,48 +152,137 @@
         <p id="loginError" class="error-message"></p>
     </div>
 
-    <div id="mainContainer">
-        <h1>Sistema de Acompanhamento de Chamados</h1>
-        <button onclick="addNewTicket()">Adicionar Novo Chamado</button>
-        <button onclick="showDatabase()">Visualizar Banco de Dados</button>
-        <div id="ticketList"></div>
+   <div id="mainContainer">
+    <h1>Sistema de Acompanhamento de Chamados</h1>
+    <button onclick="addNewTicket()">Adicionar Novo Chamado</button>
+    <button onclick="showDatabase()">Visualizar Banco de Dados</button>
+    <div id="ticketList"></div>
 
-        <div id="databaseView" style="display: none;">
-            <h2>Registros de Chamados</h2>
-            <div class="input-group">
-                <label>Filtrar por PROBLEMA:</label>
-                <input type="text" id="filterPR">
-                <label>Filtrar por OPERADOR:</label>
-                <input type="text" id="filterOP">
-                <label>Filtrar por MÊS:</label>
-                <input type="month" id="filterMonth">
-                <button onclick="applyFilters()">Aplicar Filtros</button>
+    <!-- Set display: none as the default style -->
+    <div id="databaseView" style="display: none;">
+        <div id="slaStatistics">
+            <h3>Estatísticas de SLA</h3>
+            <div class="sla-stats">
+                <div>Total de Chamados: <span id="totalChamados">0</span></div>
+                <div>Chamados no Prazo (T): <span id="chamadosNoPrazoT">0</span></div>
+                <div>Chamados Fora do Prazo (T): <span id="chamadosForaPrazoT">0</span></div>
+                <div>Chamados em Andamento (A): <span id="chamadosForaPrazoA">0</span></div>
             </div>
-            <table id="databaseTable">
-                <thead>
-                    <tr>
-                        <th>TEMPO</th>
-                        <th>CLIENTE</th>
-                        <th>PROBLEMA</th>
-                        <th>OPERADOR</th>
-                        <th>EXECULTOR</th>
-                        <th>HORA DE ABERTURA</th>
-                        <th>ARQUIVADO POR:</th>
-                        <th>HORA DE ENCERRAMENTO</th>
-                        <th>TEMPO DE EXECUÇÃO</th>
-                    </tr>
-                </thead>
-                <tbody id="databaseTableBody"></tbody>
-            </table>
         </div>
+
+        <h2>Registros de Chamados</h2>
+        <div class="input-group">
+            <label>Filtrar por PROBLEMA:</label>
+            <input type="text" id="filterPR">
+            <label>Filtrar por OPERADOR:</label>
+            <input type="text" id="filterOP">
+            <label>Filtrar por MÊS:</label>
+            <input type="month" id="filterMonth">
+            <button onclick="applyFilters()">Aplicar Filtros</button>
+        </div>
+
+
+<!-- Modify the showDatabase function -->
+ <script>
+        // Remove initialization of SLA statistics on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const databaseView = document.getElementById('databaseView');
+            databaseView.style.display = 'none';
+        });
+
+        // Update the showDatabase function to manage visibility
+        function showDatabase() {
+            const databaseView = document.getElementById('databaseView');
+            databaseView.style.display = databaseView.style.display === 'none' ? 'block' : 'none';
+            
+            if (databaseView.style.display === 'block') {
+                updateDatabaseTable();
+            }
+        }
+
+        // Update database table function remains the same but only updates SLA when database is visible
+        function updateDatabaseTable(filters = {}) {
+            const databaseView = document.getElementById('databaseView');
+            if (databaseView.style.display === 'none') return;
+
+            const tbody = document.getElementById('databaseTableBody');
+            tbody.innerHTML = '';
+
+            let filteredData = [...database];
+
+            // Apply existing filters...
+            if (filters.problema && filters.problema.trim() !== '') {
+                filteredData = filteredData.filter(t => 
+                    t.problema && t.problema.toLowerCase().includes(filters.problema.toLowerCase())
+                );
+            }
+            if (filters.operador && filters.operador.trim() !== '') {
+                filteredData = filteredData.filter(t => 
+                    t.operador && t.operador.toLowerCase().includes(filters.operador.toLowerCase())
+                );
+            }
+            if (filters.month && filters.month.trim() !== '') {
+                const [filterYear, filterMonth] = filters.month.split('-');
+                filteredData = filteredData.filter(t => {
+                    if (!t.inicio) return false;
+                    const ticketDate = new Date(t.inicio);
+                    return ticketDate.getFullYear() === parseInt(filterYear) &&
+                           ticketDate.getMonth() === (parseInt(filterMonth) - 1);
+                });
+            }
+
+            // Update SLA statistics only when database is visible
+            updateSLAStatistics(filteredData);
+
+            // Render filtered data...
+            filteredData.forEach(ticket => {
+                const row = tbody.insertRow();
+                const cells = [
+                    ticket.tempo_previsto || '',
+                    ticket.cliente || '',
+                    ticket.problema || '',
+                    ticket.operador || '',
+                    ticket.executor || '',
+                    ticket.inicio ? new Date(ticket.inicio).toLocaleString() : '',
+                    ticket.arquivado_por || '',
+                    ticket.fim || '',
+                    ticket.tempo_decorrido || ''
+                ];
+
+                cells.forEach(value => {
+                    const cell = row.insertCell();
+                    cell.textContent = value;
+                });
+            });
+        }
+
+        // Rest of your JavaScript code remains the same...
+    </script>
+            <table id="databaseTable">
+            <thead>
+                <tr>
+                    <th>TEMPO</th>
+                    <th>CLIENTE</th>
+                    <th>PROBLEMA</th>
+                    <th>OPERADOR</th>
+                    <th>EXECULTOR</th>
+                    <th>HORA DE ABERTURA</th>
+                    <th>ARQUIVADO POR:</th>
+                    <th>HORA DE ENCERRAMENTO</th>
+                    <th>TEMPO DE EXECUÇÃO</th>
+                </tr>
+            </thead>
+            <tbody id="databaseTableBody"></tbody>
+        </table>
     </div>
+</div>
 
     <script>
         const users = [
-            ["Jeffeson", "123"],
+            ["Jefferson", "123123"],
             ["Castelo", "123123"],
             ["Gabriel", "123123"],
-            ["kaline", "123123"],
+            ["Kaline", "123123"],
             ["Julia", "123123"],
             ["Virgilio", "123123"],
             ["James", "123123"],
@@ -424,6 +535,340 @@ function startTimer(ticketDiv, resumeFrom = null) {
     timers.set(ticketDiv, timer);
 }
 
+function calculateSLAStatistics(data) {
+    const stats = {
+        totalChamados: data.length,
+        chamadosAbertos: 0,
+        chamadosFechados: 0,
+        chamadosNoPrazo: 0,
+        chamadosForaPrazoT: 0,
+        chamadosForaPrazoA: 0
+    };
+
+    data.forEach(ticket => {
+        // Lógica para determinar status do chamado
+        const tempoPrevistoString = ticket.tempo_previsto || '0:0:0';
+        const tempoPrevistoSegundos = timeToSeconds(tempoPrevistoString);
+        const tempoDecorridoString = ticket.tempo_decorrido || 'T: 00:00:00';
+        const [tipoTempo, tempoDecorrido] = tempoDecorridoString.split(': ');
+        const tempoDecorridoSegundos = timeToSeconds(tempoDecorrido);
+
+        // Determinando status por tipo de tempo
+        if (tipoTempo === 'T') {
+            // Chamado em tempo previsto
+            if (tempoDecorridoSegundos > tempoPrevistoSegundos) {
+                stats.chamadosForaPrazoT++;
+            } else {
+                stats.chamadosNoPrazo++;
+            }
+        } else if (tipoTempo === 'A') {
+            // Chamado após tempo previsto
+            stats.chamadosForaPrazoA++;
+        }
+
+        // Contagem de chamados abertos/fechados
+        if (ticket.hora_fim) {
+            stats.chamadosFechados++;
+        } else {
+            stats.chamadosAbertos++;
+        }
+    });
+
+    return stats;
+}
+
+function calculateSLAStatistics(data) {
+    const stats = {
+        totalChamados: data.length,
+        chamadosAbertos: 0,
+        chamadosFechados: 0,
+        chamadosNoPrazo: 0,
+        chamadosForaPrazoT: 0,
+        chamadosForaPrazoA: 0
+    };
+
+    console.log('Dados para SLA:', data); // Debug
+
+    data.forEach(ticket => {
+        // Incrementa total de chamados
+        if (ticket.tempo_decorrido) {
+            // Verifica tipo de tempo
+            const [tipoTempo, tempoDecorrido] = ticket.tempo_decorrido.split(': ');
+            
+            // Converte tempos para segundos
+            const tempoPrevistoSegundos = ticket.tempo_previsto ? timeToSeconds(ticket.tempo_previsto) : 0;
+            const tempoDecorridoSegundos = timeToSeconds(tempoDecorrido);
+
+            // Lógica de classificação
+            if (tipoTempo === 'T') {
+                // Chamado em tempo previsto
+                if (tempoDecorridoSegundos > tempoPrevistoSegundos) {
+                    stats.chamadosForaPrazoT++;
+                } else {
+                    stats.chamadosNoPrazo++;
+                }
+            } else if (tipoTempo === 'A') {
+                // Chamado após tempo previsto
+                stats.chamadosForaPrazoA++;
+            }
+        }
+
+        // Contagem de chamados abertos/fechados
+        if (ticket.hora_fim) {
+            stats.chamadosFechados++;
+        } else {
+            stats.chamadosAbertos++;
+        }
+    });
+
+    return stats;
+}
+
+function updateSLAStatistics(data) {
+    const slaStatistics = document.getElementById('slaStatistics');
+    
+    // Sempre mostrar estatísticas, independente de filtros
+    slaStatistics.style.display = 'block';
+
+    const stats = calculateSLAStatistics(data);
+
+    console.log('Estatísticas SLA:', stats); // Debug
+
+    // Atualiza os elementos com as estatísticas
+    document.getElementById('totalChamados').textContent = stats.totalChamados;
+    document.getElementById('chamadosAbertos').textContent = stats.chamadosAbertos;
+    document.getElementById('chamadosFechados').textContent = stats.chamadosFechados;
+    document.getElementById('chamadosNoPrazo').textContent = stats.chamadosNoPrazo;
+    document.getElementById('chamadosForaPrazoT').textContent = stats.chamadosForaPrazoT;
+    document.getElementById('chamadosForaPrazoA').textContent = stats.chamadosForaPrazoA;
+}
+
+// Modificar a função updateDatabaseTable para incluir a atualização de estatísticas
+function updateDatabaseTable(filters = {}) {
+    const tbody = document.getElementById('databaseTableBody');
+    tbody.innerHTML = '';
+
+    let filteredData = [...database];
+
+    // Aplicar filtros existentes
+    if (filters.problema && filters.problema.trim() !== '') {
+        filteredData = filteredData.filter(t => 
+            t.problema && t.problema.toLowerCase().includes(filters.problema.toLowerCase())
+        );
+    }
+    if (filters.operador && filters.operador.trim() !== '') {
+        filteredData = filteredData.filter(t => 
+            t.operador && t.operador.toLowerCase().includes(filters.operador.toLowerCase())
+        );
+    }
+    if (filters.month && filters.month.trim() !== '') {
+        const [filterYear, filterMonth] = filters.month.split('-');
+        filteredData = filteredData.filter(t => {
+            if (!t.inicio) return false;
+            const ticketDate = new Date(t.inicio);
+            return ticketDate.getFullYear() === parseInt(filterYear) &&
+                   ticketDate.getMonth() === (parseInt(filterMonth) - 1);
+        });
+    }
+
+    // Atualizar estatísticas de SLA
+    updateSLAStatistics(filteredData);
+
+    // Renderizar dados filtrados
+    filteredData.forEach(ticket => {
+        const row = tbody.insertRow();
+        const cells = [
+            ticket.tempo_previsto || '',
+            ticket.cliente || '',
+            ticket.problema || '',
+            ticket.operador || '',
+            ticket.executor || '',
+            ticket.inicio ? new Date(ticket.inicio).toLocaleString() : '',
+            ticket.arquivado_por || '',
+            ticket.fim || '',
+            ticket.tempo_decorrido || ''
+        ];
+
+        cells.forEach(value => {
+            const cell = row.insertCell();
+            cell.textContent = value;
+        });
+    });
+}
+
+// Função auxiliar para converter tempo em segundos
+function timeToSeconds(timeStr) {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(':').map(Number);
+    // Garantir que tenha 3 partes
+    while (parts.length < 3) parts.unshift(0);
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+}
+
+// Chamar na inicialização
+document.addEventListener('DOMContentLoaded', () => {
+    // Inicializa estatísticas com todos os dados
+    updateSLAStatistics(database);
+});
+
+// Modificar a função de arquivamento para atualizar estatísticas
+function archiveTicket(ticketDiv) {
+    validatePasswordAndExecute((username) => {
+        // Coleta todos os valores necessários
+        const ticket = {
+            tempo_previsto: ticketDiv.querySelector('input[type="text"]').value,
+            cliente: ticketDiv.querySelector('select[id="CLIENTE"]').value,
+            problema: ticketDiv.querySelector('select[id="PROBLEMA"]').value,
+            operador: ticketDiv.querySelector('select[id="OPERADOR"]').value,
+            executor: ticketDiv.querySelector('select[id="EXECULTOR"]').value,
+            hora_inicio: ticketDiv.querySelector('input[id="hora_inicio"]').value,
+            hora_fim: new Date().toLocaleTimeString(), // Define hora de fim como hora atual
+            arquivado_por: username,
+            inicio: new Date().toISOString(),
+            fim: new Date().toLocaleTimeString(),
+            tempo_decorrido: ticketDiv.querySelector('.timer').textContent
+        };
+
+        // Verifica se há dados essenciais antes de arquivar
+        if (!ticket.cliente || !ticket.problema || !ticket.operador || !ticket.executor) {
+            alert('Por favor, preencha todos os campos obrigatórios antes de arquivar.');
+            return;
+        }
+
+        // Adiciona o ticket ao banco de dados
+        database.push(ticket);
+        
+        // Salva no localStorage
+        localStorage.setItem('ticketDatabase', JSON.stringify(database));
+
+        // Para o timer se estiver rodando
+        if (timers.has(ticketDiv)) {
+            clearInterval(timers.get(ticketDiv));
+            timers.delete(ticketDiv);
+        }
+
+        // Remove o ticket da lista atual
+        ticketDiv.remove();
+
+        // Atualiza as estatísticas
+        updateSLAStatistics(database);
+
+        // Atualiza a visualização do banco de dados se estiver aberta
+        const databaseView = document.getElementById('databaseView');
+        if (databaseView.style.display === 'block') {
+            updateDatabaseTable();
+        }
+
+        alert('Chamado arquivado com sucesso!');
+    });
+}
+
+function calculateSLAStatistics(data) {
+    const stats = {
+        totalChamados: 0,
+        chamadosNoPrazoT: 0,
+        chamadosForaPrazoT: 0,
+        chamadosForaPrazoA: 0
+    };
+
+    data.forEach(ticket => {
+        // Verificar se o ticket tem tempo decorrido
+        if (ticket.tempo_decorrido) {
+            stats.totalChamados++;
+            
+            const [tipoTempo, tempoDecorrido] = ticket.tempo_decorrido.split(': ');
+            
+            if (tipoTempo === 'T') {
+                const tempoPrevistoSegundos = timeToSeconds(ticket.tempo_previsto || '0:0:0');
+                const tempoDecorridoSegundos = timeToSeconds(tempoDecorrido);
+
+                if (tempoDecorridoSegundos <= tempoPrevistoSegundos) {
+                    stats.chamadosNoPrazoT++;
+                } else {
+                    stats.chamadosForaPrazoT++;
+                }
+            } else if (tipoTempo === 'A') {
+                stats.chamadosForaPrazoA++;
+            }
+        }
+    });
+
+    return stats;
+}
+
+function updateSLAStatistics(data) {
+    const stats = calculateSLAStatistics(data);
+
+    document.getElementById('totalChamados').textContent = stats.totalChamados;
+    document.getElementById('chamadosNoPrazoT').textContent = stats.chamadosNoPrazoT;
+    document.getElementById('chamadosForaPrazoT').textContent = stats.chamadosForaPrazoT;
+    document.getElementById('chamadosForaPrazoA').textContent = stats.chamadosForaPrazoA;
+}
+
+function updateDatabaseTable(filters = {}) {
+    const tbody = document.getElementById('databaseTableBody');
+    tbody.innerHTML = '';
+
+    let filteredData = [...database];
+
+    // Aplicar filtros existentes
+    if (filters.problema && filters.problema.trim() !== '') {
+        filteredData = filteredData.filter(t => 
+            t.problema && t.problema.toLowerCase().includes(filters.problema.toLowerCase())
+        );
+    }
+    if (filters.operador && filters.operador.trim() !== '') {
+        filteredData = filteredData.filter(t => 
+            t.operador && t.operador.toLowerCase().includes(filters.operador.toLowerCase())
+        );
+    }
+    if (filters.month && filters.month.trim() !== '') {
+        const [filterYear, filterMonth] = filters.month.split('-');
+        filteredData = filteredData.filter(t => {
+            if (!t.inicio) return false;
+            const ticketDate = new Date(t.inicio);
+            return ticketDate.getFullYear() === parseInt(filterYear) &&
+                   ticketDate.getMonth() === (parseInt(filterMonth) - 1);
+        });
+    }
+
+    // Atualizar estatísticas de SLA
+    updateSLAStatistics(filteredData);
+
+    // Renderizar dados filtrados
+    filteredData.forEach(ticket => {
+        const row = tbody.insertRow();
+        const cells = [
+            ticket.tempo_previsto || '',
+            ticket.cliente || '',
+            ticket.problema || '',
+            ticket.operador || '',
+            ticket.executor || '',
+            ticket.inicio ? new Date(ticket.inicio).toLocaleString() : '',
+            ticket.arquivado_por || '',
+            ticket.fim || '',
+            ticket.tempo_decorrido || ''
+        ];
+
+        cells.forEach(value => {
+            const cell = row.insertCell();
+            cell.textContent = value;
+        });
+    });
+}
+function timeToSeconds(timeStr) {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(':').map(Number);
+    // Garantir que tenha 3 partes
+    while (parts.length < 3) parts.unshift(0);
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+}
+
+// Inicialização com todos os dados
+document.addEventListener('DOMContentLoaded', () => {
+    updateSLAStatistics(database);
+});
+
 function getTimerValue(ticketDiv) {
     const timerDisplay = ticketDiv.querySelector('.timer').textContent;
     const [, timeStr] = timerDisplay.split(': ');
@@ -576,35 +1021,65 @@ function addNewTicket() {
 
         function archiveTicket(ticketDiv) {
             validatePasswordAndExecute((username) => {
+                // Coleta todos os valores necessários
                 const ticket = {
-                    tempo_previsto: ticketDiv.querySelector('.input-time').value,
+                    tempo_previsto: ticketDiv.querySelector('input[type="text"]').value,
                     cliente: ticketDiv.querySelector('select[id="CLIENTE"]').value,
                     problema: ticketDiv.querySelector('select[id="PROBLEMA"]').value,
                     operador: ticketDiv.querySelector('select[id="OPERADOR"]').value,
                     executor: ticketDiv.querySelector('select[id="EXECULTOR"]').value,
-                    inicio: new Date().toISOString(),
-                    arquivado_por: username,
                     hora_inicio: ticketDiv.querySelector('input[id="hora_inicio"]').value,
-                    hora_fim: ticketDiv.querySelector('input[id="hora_fim"]').value,
+                    hora_fim: new Date().toLocaleTimeString(), // Define hora de fim como hora atual
+                    arquivado_por: username,
+                    inicio: ticketDiv.querySelector('input[id="hora_inicio"]').value,
                     fim: new Date().toLocaleTimeString(),
                     tempo_decorrido: ticketDiv.querySelector('.timer').textContent
-        };
+                };
 
-    });
-}
+                // Verifica se há dados essenciais antes de arquivar
+                if (!ticket.cliente || !ticket.problema || !ticket.operador || !ticket.executor) {
+                    alert('Por favor, preencha todos os campos obrigatórios antes de arquivar.');
+                    return;
+                }
+
+                // Adiciona o ticket ao banco de dados
+                database.push(ticket);
+                
+                // Salva no localStorage
+                localStorage.setItem('ticketDatabase', JSON.stringify(database));
+
+                // Para o timer se estiver rodando
+                if (timers.has(ticketDiv)) {
+                    clearInterval(timers.get(ticketDiv));
+                    timers.delete(ticketDiv);
+                }
+
+                // Remove o ticket da lista atual
+                ticketDiv.remove();
+
+                // Atualiza a visualização do banco de dados se estiver aberta
+                const databaseView = document.getElementById('databaseView');
+                if (databaseView.style.display === 'block') {
+                    updateDatabaseTable();
+                }
+
+                alert('Chamado arquivado com sucesso!');
+            });
+        }
 
         function validatePasswordAndExecute(callback) {
             const username = prompt('Digite seu nome de usuário:');
             const password = prompt('Digite sua senha:');
-    
+            
             const user = users.find(u => u[0] === username && u[1] === password);
-    
+        
             if (user) {
-                callback(username); // Passa o nome do usuário para o callback
-        } else {
+                callback(username);
+            } else {
                 alert('Usuário ou senha incorretos!');
+        }
     }
-}
+
 
         function calculateTotalTime(ticketDiv) {
             const hora_inicio = ticketDiv.querySelector('input[id="hora_inicio"]').value;
