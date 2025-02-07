@@ -155,20 +155,11 @@
    <div id="mainContainer">
     <h1>Sistema de Acompanhamento de Chamados</h1>
     <button onclick="addNewTicket()">Adicionar Novo Chamado</button>
-    <button onclick="showDatabase()">Visualizar Banco de Dados</button>
+    <button onclick="showDatabase()">Visualizar Chamados</button>
     <div id="ticketList"></div>
 
     <!-- Set display: none as the default style -->
     <div id="databaseView" style="display: none;">
-        <div id="slaStatistics">
-            <h3>Estatísticas de SLA</h3>
-            <div class="sla-stats">
-                <div>Total de Chamados: <span id="totalChamados">0</span></div>
-                <div>Chamados no Prazo (T): <span id="chamadosNoPrazoT">0</span></div>
-                <div>Chamados Fora do Prazo (T): <span id="chamadosForaPrazoT">0</span></div>
-                <div>Chamados em Andamento (A): <span id="chamadosForaPrazoA">0</span></div>
-            </div>
-        </div>
 
         <h2>Registros de Chamados</h2>
         <div class="input-group">
@@ -273,9 +264,6 @@
                 });
             }
 
-            // Update SLA statistics only when database is visible
-            updateSLAStatistics(filteredData);
-
             // Render filtered data...
             filteredData.forEach(ticket => {
                 const row = tbody.insertRow();
@@ -335,8 +323,8 @@
 
         const operadores = ["", "Castelo", "Marcelo", "Julia", "kaline", "Gabriel", "Jeffeson"];
         const executores = ["", "Airton", "Damião", "Daniel", "Alison"];
-        const problemas = ["","PROBLEMA"];
-        const ncOpcoes = ["","CLIENTE"]
+        const problemas = ["","Acesso Lento","Acréscimo de canais","Adição de equipamento","Ajuste no IPV6","Ativação de Link","Ativação de Telefonia","Cliente entrou em contato pedindo uma informação tecnica","Falha elétrica no cliente”,“Falha elétrica no POP da Inovanet","Falha no equipamento da Inovanet","Falha no fornecimento de internet pela ALGAR","Falha no fornecimento de internet pela BR DIGITAL","Falha no link de transporte","Help Desk Presencial","Help Desk Remoto","Help Desk Telefonia","implantar cabo de internet","Mudança de endereço","Mudança de Equipamentos","Mudança de Local do Aparelho","Operadora de telefonia com falha de rotas","Orçamento","Outros","Portabilidade da linha","Problema na Hybrid","Problemas com páginas","Problemas no VOIP","Recolher equipamento","Rompimento do Backbone em Natal","Rompimento do drop do cliente em Ceará-Mirim","Rompimento do drop do cliente em Mossoró","Rompimento do drop do cliente em Natal","Rompimento do drop do cliente em Parnamirim","Rompimento no drop em STO","Rompimento no transporte da Intelnet","Rompimento no transporte para Ceará-Mirim","Rompimento no transporte para São José de Mipibu","Sem Acesso","Sem ping","Solicitação BGP","Solicitação de linha nova","Troca de CEO","Troca de conector tipo click","Troca de conector tipo RJ45","Troca de CTO","Troca de DROP","Troca de fonte com defeito","Troca de splitter"];
+        const ncOpcoes = ["","476","490","135","240","306","317","318","169","110","184","40","65","224","251","370","214","215","342","520","199","467","242","457","22","327","498","500","417","216","248","210","247","80","24","152","51","195","69","205","358","115","119","50","549","550","191","365","13","151","470","405","359","334","404","399","407","55","424","462","469","535","435","222","176","319","570","441","436","437","438","43","446","225","323","15","491","54","109","515","538","539","553","552","21","483","264","37","88","4","245","354","501","447","494","475","418","182","26","512","572","157","187","361","536","243","217","582","579","442","310","198","160","8","161","158","137","165","212","305","140","534","532","132","235","303","433","2","311","285","229","409","465","521","153","527","196","332","5","328","324","408","211","519","422","421","78","471","174","73","67","403","338","102","238","201","396","428","410","406","580","489","518","180","181","260","577","492","559","188","44","297","479","524","148","87","453","108","452","236","444","454","445","448","449","308","309","76","565","466","170","171","360","374","371","555","156","146","484","516","514","197","254","255","413","378","456","507","523","104","185","289","496","463","537","60","18","36","290","316","425","27","257","529","584","574","458","495","48","427","368","213","241","43","517","190","499","522","509","510","511","583","124","431","551","228","322","321","262","394","352","275","315","263","283","280","270","276","295","246","353","302","232","451","506","343","286","325","485","220","189","575","155","573","414","505","143","144","123","330","480","434","96","17","493","531","145","347","557","432","271","416","223","450","369","478","571","576","298","391","388","389","393","390","162","340","204"]
         let database = JSON.parse(localStorage.getItem('ticketDatabase')) || [];
         let timers = new Map();
         let accumulatedTimes = new Map();
@@ -367,53 +355,89 @@
             return select;
         }
 
-        function addNewTicket() {
-            const ticketList = document.getElementById('ticketList');
-            const ticketDiv = document.createElement('div');
-            ticketDiv.className = 'ticket-row';
-            
-            const fields = {
-                ts: document.createElement('input'),
-                nc: createSelect(ncOpcoes, 'CLIENTE'),
-                pr: createSelect(problemas, 'PROBLEMA'),
-                op: createSelect(operadores, 'OPERADOR'),
-                ex: createSelect(executores, 'EXECULTOR'),
-                ha: document.createElement('input'),
-                he: document.createElement('input')
-            };
 
-            fields.ha.readOnly = true;
-            fields.ha.id = 'ha';
-            fields.he.readOnly = true;
-            fields.he.id = 'he';
+    function addNewTicket() {
+        const ticketList = document.getElementById('ticketList');
+        const ticketDiv = document.createElement('div');
+        ticketDiv.className = 'ticket-row';
+        
+        const fields = {
+            tempo_previsto: document.createElement('input'),
+            CLIENTE: createSelect(ncOpcoes, 'CLIENTE'),
+            PROBLEMA: createSelect(problemas, 'PROBLEMA'),
+            OPERADOR: createSelect(operadores, 'OPERADOR'),
+            EXECULTOR: createSelect(executores, 'EXECULTOR'),
+            hora_inicio: document.createElement('input'),
+            hora_fim: document.createElement('input')
+        };
 
-            Object.entries(fields).forEach(([key, field]) => {
-                const label = document.createElement('label');
-                label.textContent = key.toUpperCase() + ':';
-                ticketDiv.appendChild(label);
-                ticketDiv.appendChild(field);
-            });
+        // Configure input fields
+        fields.tempo_previsto.type = 'text';
+        fields.tempo_previsto.className = 'input-time';
+        fields.tempo_previsto.placeholder = 'H:M:S';
+        
+        // Input formatting for time
+        fields.tempo_previsto.addEventListener('input', function(e) {
+            // Remove non-numeric characters except ':'
+            e.target.value = e.target.value.replace(/[^0-9:]/g, '');
+        });
 
-            const timerDisplay = document.createElement('div');
-            timerDisplay.className = 'timer';
-            timerDisplay.textContent = 'T: 00:00:00';
-            ticketDiv.setAttribute('data-timer-type', 'T');
-            ticketDiv.setAttribute('data-timer-state', 'stopped');
-            ticketDiv.setAttribute('data-accumulated-time', '0');
-            
-            const buttonContainer = document.createElement('div');
-            const buttonLabels = ['Iniciar', 'Pausar', 'Arquivar', 'Excluir'];
-            buttonLabels.forEach(text => {
-                const button = document.createElement('button');
-                button.textContent = text === 'Pausar' ? 'P' : text[0];
-                button.onclick = () => handleTicketAction(text.toLowerCase(), ticketDiv);
-                buttonContainer.appendChild(button);
-            });
+        fields.tempo_previsto.addEventListener('blur', function(e) {
+            if (e.target.value) {
+                let parts = e.target.value.split(':');
+                // Pad with zeros and limit to 3 parts
+                parts = parts.map(part => part.padStart(2, '0'));
+                while (parts.length < 3) parts.push('00');
+                e.target.value = parts.slice(0, 3).join(':');
+            }
+        });
 
-            ticketDiv.appendChild(timerDisplay);
-            ticketDiv.appendChild(buttonContainer);
-            ticketList.appendChild(ticketDiv);
-        }
+        // Set read-only fields
+        fields.hora_inicio.readOnly = true;
+        fields.hora_inicio.id = 'hora_inicio';
+        fields.hora_fim.readOnly = true;
+        fields.hora_fim.id = 'hora_fim';
+
+        // Create labels and append fields
+        Object.entries(fields).forEach(([key, field]) => {
+            const label = document.createElement('label');
+            label.textContent = {
+                'tempo_previsto': 'TEMPO PREVISTO:',
+                'hora_inicio': 'HORA DE INÍCIO:',
+                'hora_fim': 'HORA DE FIM:'
+            }[key] || key.toUpperCase() + ':';
+            ticketDiv.appendChild(label);
+            ticketDiv.appendChild(field);
+        });
+
+        // Timer display
+        const timerDisplay = document.createElement('div');
+        timerDisplay.className = 'timer';
+        timerDisplay.textContent = 'T: 00:00:00';
+        ticketDiv.setAttribute('data-timer-type', 'T');
+        ticketDiv.setAttribute('data-timer-state', 'stopped');
+        ticketDiv.setAttribute('data-accumulated-time', '0');
+        
+        // Button container
+        const buttonContainer = document.createElement('div');
+        const buttonActions = [
+            { icon: 'fas fa-play', handler: 'iniciar' },
+            { icon: 'fas fa-pause', handler: 'pausar' },
+            { icon: 'fas fa-archive', handler: 'arquivar' },
+            { icon: 'fas fa-trash', handler: 'excluir' }
+        ];
+
+        buttonActions.forEach(({ icon, handler }) => {
+            const button = document.createElement('button');
+            button.innerHTML = `<i class="${icon}"></i>`;
+            button.onclick = () => handleTicketAction(handler, ticketDiv);
+            buttonContainer.appendChild(button);
+        });
+
+        ticketDiv.appendChild(timerDisplay);
+        ticketDiv.appendChild(buttonContainer);
+        ticketList.appendChild(ticketDiv);
+    }
 
         function handleTicketAction(action, ticketDiv) {
     switch(action) {
@@ -471,47 +495,156 @@
 
 function archiveTicket(ticketDiv) {
     validatePasswordAndExecute((username) => {
+        // Collect all necessary values
+        const tempoPrevisto = ticketDiv.querySelector('input[type="text"]').value;
+        const horaInicio = ticketDiv.querySelector('input[id="hora_inicio"]').value;
+        const dataAbertura = ticketDiv.querySelector('input[id="data_abertura"]').value; // Get the opening date
+        const horaFim = new Date().toLocaleTimeString(); // Set end time as current time
+
+        // Calculate the total execution time
+        const tempoDecorrido = calculateTotalTime(horaInicio, horaFim);
+
+        // Calculate the total time in seconds
+        const tempoPrevistoSeconds = timeToSeconds(tempoPrevisto);
+        const tempoDecorridoSeconds = timeToSeconds(tempoDecorrido);
+
+        // Determine the status of the deadline
+        const statusPrazo = tempoDecorridoSeconds <= tempoPrevistoSeconds ? 'No Prazo' : 'Fora do Prazo (A)';
+
         const ticket = {
-            tempo_previsto: ticketDiv.querySelector('.input-time').value,
+            tempo_previsto: tempoPrevisto,
             cliente: ticketDiv.querySelector('select[id="CLIENTE"]').value,
             problema: ticketDiv.querySelector('select[id="PROBLEMA"]').value,
             operador: ticketDiv.querySelector('select[id="OPERADOR"]').value,
             executor: ticketDiv.querySelector('select[id="EXECULTOR"]').value,
-            inicio: new Date().toISOString(),
+            hora_inicio: horaInicio,
+            data_abertura: dataAbertura, // Store the opening date
+            hora_fim: horaFim,
             arquivado_por: username,
-            hora_inicio: ticketDiv.querySelector('input[id="hora_inicio"]').value,
-            hora_fim: ticketDiv.querySelector('input[id="hora_fim"]').value,
-            fim: new Date().toLocaleTimeString(),
-            tempo_decorrido: ticketDiv.querySelector('.timer').textContent
+            inicio: horaInicio,
+            fim: horaFim,
+            tempo_decorrido: tempoDecorrido, // Store the actual time spent
+            status_prazo: statusPrazo // Add status of the deadline
         };
 
-        // Adiciona o ticket ao banco de dados
+        // Check for essential data before archiving
+        if (!ticket.cliente || !ticket.problema || !ticket.operador || !ticket.executor) {
+            alert('Por favor, preencha todos os campos obrigatórios antes de arquivar.');
+            return;
+        }
+
+        // Add the ticket to the database
         database.push(ticket);
-        
-        // Salva no localStorage
+
+        // Save to localStorage
         localStorage.setItem('ticketDatabase', JSON.stringify(database));
 
-        // Remove o ticket da lista atual
+        // Stop the timer if it's running
+        if (timers.has(ticketDiv)) {
+            clearInterval(timers.get(ticketDiv));
+            timers.delete(ticketDiv);
+        }
+
+        // Remove the ticket from the current list
         ticketDiv.remove();
+
+        // Update the database view if it's open
+        const databaseView = document.getElementById('databaseView');
+        if (databaseView.style.display === 'block') {
+            updateDatabaseTable();
+        }
+
+        alert(`Chamado arquivado com sucesso!\nData de abertura: ${dataAbertura} Hora de abertura: ${horaInicio}`);
     });
 }
 
 // Função addNewTicket corrigida (parte relevante)
 function addNewTicket() {
-    // ... (código anterior permanece igual)
+    const ticketList = document.getElementById('ticketList');
+    const ticketDiv = document.createElement('div');
+    ticketDiv.className = 'ticket-row';
     
+    const fields = {
+        tempo_previsto: document.createElement('input'),
+        CLIENTE: createSelect(ncOpcoes, 'CLIENTE'),
+        PROBLEMA: createSelect(problemas, 'PROBLEMA'),
+        OPERADOR: createSelect(operadores, 'OPERADOR'),
+        EXECULTOR: createSelect(executores, 'EXECULTOR'),
+        hora_inicio: document.createElement('input'),
+        data_abertura: document.createElement('input'), // Add input for opening date
+        hora_fim: document.createElement('input')
+    };
+
+    // Configure input fields
+    fields.tempo_previsto.type = 'text';
+    fields.tempo_previsto.className = 'input-time';
+    fields.tempo_previsto.placeholder = 'H:M:S';
+    
+    // Input formatting for time
+    fields.tempo_previsto.addEventListener('input', function(e) {
+        // Remove non-numeric characters except ':'
+        e.target.value = e.target.value.replace(/[^0-9:]/g, '');
+    });
+
+    fields.tempo_previsto.addEventListener('blur', function(e) {
+        if (e.target.value) {
+            let parts = e.target.value.split(':');
+            // Pad with zeros and limit to 3 parts
+            parts = parts.map(part => part.padStart(2, '0'));
+            while (parts.length < 3) parts.push('00');
+            e.target.value = parts.slice(0, 3).join(':');
+        }
+    });
+
+    // Set read-only fields
+    fields.hora_inicio.readOnly = true;
+    fields.hora_inicio.id = 'hora_inicio';
+    fields.data_abertura.readOnly = true;
+    fields.data_abertura.id = 'data_abertura'; // Set ID for opening date
+    fields.hora_fim.readOnly = true;
+    fields.hora_fim.id = 'hora_fim';
+
+    // Create labels and append fields
+    Object.entries(fields).forEach(([key, field]) => {
+        const label = document.createElement('label');
+        label.textContent = {
+            'tempo_previsto': 'TEMPO PREVISTO:',
+            'hora_inicio': 'HORA DE INÍCIO:',
+            'data_abertura': 'DATA DE ABERTURA:', // Add label for opening date
+            'hora_fim': 'HORA DE FIM:'
+        }[key] || key.toUpperCase() + ':';
+        ticketDiv.appendChild(label);
+        ticketDiv.appendChild(field);
+    });
+
+    // Timer display
+    const timerDisplay = document.createElement('div');
+    timerDisplay.className = 'timer';
+    timerDisplay.textContent = 'T: 00:00:00';
+    ticketDiv.setAttribute('data-timer-type', 'T');
+    ticketDiv.setAttribute('data-timer-state', 'stopped');
+    ticketDiv.setAttribute('data-accumulated-time', '0');
+    
+    // Button container
     const buttonContainer = document.createElement('div');
-    const buttonLabels = ['IINICIAR', 'PAUSAR', 'ARQUIVAR', 'EXCLUIR'];
-    buttonLabels.forEach(text => {
+    const buttonActions = [
+        { icon: 'fas fa-play', handler: 'iniciar' },
+        { icon: 'fas fa-pause', handler: 'pausar' },
+        { icon: 'fas fa-archive', handler: 'arquivar' },
+        { icon: 'fas fa-trash', handler: 'excluir' }
+    ];
+
+    buttonActions.forEach(({ icon, handler }) => {
         const button = document.createElement('button');
-        button.textContent = text;
-        button.onclick = () => handleTicketAction(text.toLowerCase(), ticketDiv);
+        button.innerHTML = `<i class="${icon}"></i>`;
+        button.onclick = () => handleTicketAction(handler, ticketDiv);
         buttonContainer.appendChild(button);
     });
-    
-    // ... (resto do código permanece igual)
-}
 
+    ticketDiv.appendChild(timerDisplay);
+    ticketDiv.appendChild(buttonContainer);
+    ticketList.appendChild(ticketDiv);
+}
 // Função auxiliar para validar o formato do tempo
 function isValidTimeFormat(timeStr) {
     return /^\d{1,2}:\d{1,2}:\d{1,2}$/.test(timeStr);
@@ -553,16 +686,30 @@ function startTimer(ticketDiv, resumeFrom = null) {
 
 function startTimer(ticketDiv, resumeFrom = null) {
     const timerDisplay = ticketDiv.querySelector('.timer');
-    const ts = parseInt(ticketDiv.querySelector('input').value) || 0;
+    const tsInput = ticketDiv.querySelector('.input-time');
+    const ts = timeToSeconds(tsInput.value || '0:0:0');
     let timeLeft = resumeFrom !== null ? resumeFrom : ts;
     let timerType = ticketDiv.getAttribute('data-timer-type');
+
+    // Configurar automaticamente a hora de início se ainda não estiver definida
+    const horaInicioInput = ticketDiv.querySelector('input[id="hora_inicio"]');
+    if (!horaInicioInput.value) {
+        horaInicioInput.value = new Date().toLocaleTimeString();
+    }
+
+    if (timers.has(ticketDiv)) {
+        clearInterval(timers.get(ticketDiv));
+    }
+
+    const startTime = Date.now();
+    ticketDiv.setAttribute('data-start-time', startTime);
 
     const timer = setInterval(() => {
         if (timerType === 'T' && timeLeft > 0) {
             timeLeft--;
             updateTimerDisplay(timerDisplay, timeLeft, 'T');
             updateTicketColor(ticketDiv, timeLeft / ts);
-            
+
             if (timeLeft === 0) {
                 timerType = 'A';
                 ticketDiv.setAttribute('data-timer-type', 'A');
@@ -579,113 +726,6 @@ function startTimer(ticketDiv, resumeFrom = null) {
     timers.set(ticketDiv, timer);
 }
 
-function calculateSLAStatistics(data) {
-    const stats = {
-        totalChamados: data.length,
-        chamadosAbertos: 0,
-        chamadosFechados: 0,
-        chamadosNoPrazo: 0,
-        chamadosForaPrazoT: 0,
-        chamadosForaPrazoA: 0
-    };
-
-    data.forEach(ticket => {
-        // Lógica para determinar status do chamado
-        const tempoPrevistoString = ticket.tempo_previsto || '0:0:0';
-        const tempoPrevistoSegundos = timeToSeconds(tempoPrevistoString);
-        const tempoDecorridoString = ticket.tempo_decorrido || 'T: 00:00:00';
-        const [tipoTempo, tempoDecorrido] = tempoDecorridoString.split(': ');
-        const tempoDecorridoSegundos = timeToSeconds(tempoDecorrido);
-
-        // Determinando status por tipo de tempo
-        if (tipoTempo === 'T') {
-            // Chamado em tempo previsto
-            if (tempoDecorridoSegundos > tempoPrevistoSegundos) {
-                stats.chamadosForaPrazoT++;
-            } else {
-                stats.chamadosNoPrazo++;
-            }
-        } else if (tipoTempo === 'A') {
-            // Chamado após tempo previsto
-            stats.chamadosForaPrazoA++;
-        }
-
-        // Contagem de chamados abertos/fechados
-        if (ticket.hora_fim) {
-            stats.chamadosFechados++;
-        } else {
-            stats.chamadosAbertos++;
-        }
-    });
-
-    return stats;
-}
-
-function calculateSLAStatistics(data) {
-    const stats = {
-        totalChamados: data.length,
-        chamadosAbertos: 0,
-        chamadosFechados: 0,
-        chamadosNoPrazo: 0,
-        chamadosForaPrazoT: 0,
-        chamadosForaPrazoA: 0
-    };
-
-    console.log('Dados para SLA:', data); // Debug
-
-    data.forEach(ticket => {
-        // Incrementa total de chamados
-        if (ticket.tempo_decorrido) {
-            // Verifica tipo de tempo
-            const [tipoTempo, tempoDecorrido] = ticket.tempo_decorrido.split(': ');
-            
-            // Converte tempos para segundos
-            const tempoPrevistoSegundos = ticket.tempo_previsto ? timeToSeconds(ticket.tempo_previsto) : 0;
-            const tempoDecorridoSegundos = timeToSeconds(tempoDecorrido);
-
-            // Lógica de classificação
-            if (tipoTempo === 'T') {
-                // Chamado em tempo previsto
-                if (tempoDecorridoSegundos > tempoPrevistoSegundos) {
-                    stats.chamadosForaPrazoT++;
-                } else {
-                    stats.chamadosNoPrazo++;
-                }
-            } else if (tipoTempo === 'A') {
-                // Chamado após tempo previsto
-                stats.chamadosForaPrazoA++;
-            }
-        }
-
-        // Contagem de chamados abertos/fechados
-        if (ticket.hora_fim) {
-            stats.chamadosFechados++;
-        } else {
-            stats.chamadosAbertos++;
-        }
-    });
-
-    return stats;
-}
-
-function updateSLAStatistics(data) {
-    const slaStatistics = document.getElementById('slaStatistics');
-    
-    // Sempre mostrar estatísticas, independente de filtros
-    slaStatistics.style.display = 'block';
-
-    const stats = calculateSLAStatistics(data);
-
-    console.log('Estatísticas SLA:', stats); // Debug
-
-    // Atualiza os elementos com as estatísticas
-    document.getElementById('totalChamados').textContent = stats.totalChamados;
-    document.getElementById('chamadosAbertos').textContent = stats.chamadosAbertos;
-    document.getElementById('chamadosFechados').textContent = stats.chamadosFechados;
-    document.getElementById('chamadosNoPrazo').textContent = stats.chamadosNoPrazo;
-    document.getElementById('chamadosForaPrazoT').textContent = stats.chamadosForaPrazoT;
-    document.getElementById('chamadosForaPrazoA').textContent = stats.chamadosForaPrazoA;
-}
 
 // Modificar a função updateDatabaseTable para incluir a atualização de estatísticas
 function updateDatabaseTable(filters = {}) {
@@ -694,7 +734,7 @@ function updateDatabaseTable(filters = {}) {
 
     let filteredData = [...database];
 
-    // Aplicar filtros existentes
+    // Apply existing filters
     if (filters.problema && filters.problema.trim() !== '') {
         filteredData = filteredData.filter(t => 
             t.problema && t.problema.toLowerCase().includes(filters.problema.toLowerCase())
@@ -715,10 +755,7 @@ function updateDatabaseTable(filters = {}) {
         });
     }
 
-    // Atualizar estatísticas de SLA
-    updateSLAStatistics(filteredData);
-
-    // Renderizar dados filtrados
+    // Render filtered data
     filteredData.forEach(ticket => {
         const row = tbody.insertRow();
         const cells = [
@@ -730,7 +767,8 @@ function updateDatabaseTable(filters = {}) {
             ticket.inicio ? new Date(ticket.inicio).toLocaleString() : '',
             ticket.arquivado_por || '',
             ticket.fim || '',
-            ticket.tempo_decorrido || ''
+            ticket.tempo_decorrido || '',
+            ticket.status_prazo || '' // Display the status of the deadline
         ];
 
         cells.forEach(value => {
@@ -752,52 +790,63 @@ function timeToSeconds(timeStr) {
 // Chamar na inicialização
 document.addEventListener('DOMContentLoaded', () => {
     // Inicializa estatísticas com todos os dados
-    updateSLAStatistics(database);
 });
 
 // Modificar a função de arquivamento para atualizar estatísticas
 function archiveTicket(ticketDiv) {
     validatePasswordAndExecute((username) => {
-        // Coleta todos os valores necessários
+        // Collect all necessary values
+        const tempoPrevisto = ticketDiv.querySelector('input[type="text"]').value;
+        const horaInicio = ticketDiv.querySelector('input[id="hora_inicio"]').value;
+        const horaFim = new Date().toLocaleTimeString(); // Set end time as current time
+
+        // Calculate the total execution time
+        const tempoDecorrido = calculateTotalTime(horaInicio, horaFim);
+
+        // Calculate the total time in seconds
+        const tempoPrevistoSeconds = timeToSeconds(tempoPrevisto);
+        const tempoDecorridoSeconds = timeToSeconds(tempoDecorrido);
+
+        // Determine the status of the deadline
+        const statusPrazo = tempoDecorridoSeconds <= tempoPrevistoSeconds ? 'No Prazo' : 'Fora do Prazo (A)';
+
         const ticket = {
-            tempo_previsto: ticketDiv.querySelector('input[type="text"]').value,
+            tempo_previsto: tempoPrevisto,
             cliente: ticketDiv.querySelector('select[id="CLIENTE"]').value,
             problema: ticketDiv.querySelector('select[id="PROBLEMA"]').value,
             operador: ticketDiv.querySelector('select[id="OPERADOR"]').value,
             executor: ticketDiv.querySelector('select[id="EXECULTOR"]').value,
-            hora_inicio: ticketDiv.querySelector('input[id="hora_inicio"]').value,
-            hora_fim: new Date().toLocaleTimeString(), // Define hora de fim como hora atual
+            hora_inicio: horaInicio,
+            hora_fim: horaFim,
             arquivado_por: username,
-            inicio: new Date().toISOString(),
-            fim: new Date().toLocaleTimeString(),
-            tempo_decorrido: ticketDiv.querySelector('.timer').textContent
+            inicio: horaInicio,
+            fim: horaFim,
+            tempo_decorrido: tempoDecorrido, // Store the actual time spent
+            status_prazo: statusPrazo // Add status of the deadline
         };
 
-        // Verifica se há dados essenciais antes de arquivar
+        // Check for essential data before archiving
         if (!ticket.cliente || !ticket.problema || !ticket.operador || !ticket.executor) {
             alert('Por favor, preencha todos os campos obrigatórios antes de arquivar.');
             return;
         }
 
-        // Adiciona o ticket ao banco de dados
+        // Add the ticket to the database
         database.push(ticket);
-        
-        // Salva no localStorage
+
+        // Save to localStorage
         localStorage.setItem('ticketDatabase', JSON.stringify(database));
 
-        // Para o timer se estiver rodando
+        // Stop the timer if it's running
         if (timers.has(ticketDiv)) {
             clearInterval(timers.get(ticketDiv));
             timers.delete(ticketDiv);
         }
 
-        // Remove o ticket da lista atual
+        // Remove the ticket from the current list
         ticketDiv.remove();
 
-        // Atualiza as estatísticas
-        updateSLAStatistics(database);
-
-        // Atualiza a visualização do banco de dados se estiver aberta
+        // Update the database view if it's open
         const databaseView = document.getElementById('databaseView');
         if (databaseView.style.display === 'block') {
             updateDatabaseTable();
@@ -807,55 +856,13 @@ function archiveTicket(ticketDiv) {
     });
 }
 
-function calculateSLAStatistics(data) {
-    const stats = {
-        totalChamados: 0,
-        chamadosNoPrazoT: 0,
-        chamadosForaPrazoT: 0,
-        chamadosForaPrazoA: 0
-    };
-
-    data.forEach(ticket => {
-        // Verificar se o ticket tem tempo decorrido
-        if (ticket.tempo_decorrido) {
-            stats.totalChamados++;
-            
-            const [tipoTempo, tempoDecorrido] = ticket.tempo_decorrido.split(': ');
-            
-            if (tipoTempo === 'T') {
-                const tempoPrevistoSegundos = timeToSeconds(ticket.tempo_previsto || '0:0:0');
-                const tempoDecorridoSegundos = timeToSeconds(tempoDecorrido);
-
-                if (tempoDecorridoSegundos <= tempoPrevistoSegundos) {
-                    stats.chamadosNoPrazoT++;
-                } else {
-                    stats.chamadosForaPrazoT++;
-                }
-            } else if (tipoTempo === 'A') {
-                stats.chamadosForaPrazoA++;
-            }
-        }
-    });
-
-    return stats;
-}
-
-function updateSLAStatistics(data) {
-    const stats = calculateSLAStatistics(data);
-
-    document.getElementById('totalChamados').textContent = stats.totalChamados;
-    document.getElementById('chamadosNoPrazoT').textContent = stats.chamadosNoPrazoT;
-    document.getElementById('chamadosForaPrazoT').textContent = stats.chamadosForaPrazoT;
-    document.getElementById('chamadosForaPrazoA').textContent = stats.chamadosForaPrazoA;
-}
-
 function updateDatabaseTable(filters = {}) {
     const tbody = document.getElementById('databaseTableBody');
     tbody.innerHTML = '';
 
     let filteredData = [...database];
 
-    // Aplicar filtros existentes
+    // Apply existing filters
     if (filters.problema && filters.problema.trim() !== '') {
         filteredData = filteredData.filter(t => 
             t.problema && t.problema.toLowerCase().includes(filters.problema.toLowerCase())
@@ -876,8 +883,31 @@ function updateDatabaseTable(filters = {}) {
         });
     }
 
-    // Atualizar estatísticas de SLA
-    updateSLAStatistics(filteredData);
+    // Render filtered data
+    filteredData.forEach(ticket => {
+        const row = tbody.insertRow();
+        const cells = [
+            ticket.tempo_previsto || '',
+            ticket.cliente || '',
+            ticket.problema || '',
+            ticket.operador || '',
+            ticket.executor || '',
+            ticket.inicio ? new Date(ticket.inicio).toLocaleString() : '',
+            ticket.arquivado_por || '',
+            ticket.fim || '',
+            ticket.tempo_decorrido || '',
+            ticket.status_prazo || '' // Display the status of the deadline
+        ];
+
+        cells.forEach(value => {
+            const cell = row.insertCell();
+            cell.textContent = value;
+        });
+    });
+}
+
+
+
 
     // Renderizar dados filtrados
     filteredData.forEach(ticket => {
@@ -899,11 +929,10 @@ function updateDatabaseTable(filters = {}) {
             cell.textContent = value;
         });
     });
-}
+    
 function timeToSeconds(timeStr) {
     if (!timeStr) return 0;
     const parts = timeStr.split(':').map(Number);
-    // Garantir que tenha 3 partes
     while (parts.length < 3) parts.unshift(0);
     return parts[0] * 3600 + parts[1] * 60 + parts[2];
 }
@@ -924,6 +953,13 @@ function pauseTimer(ticketDiv) {
     if (timers.has(ticketDiv)) {
         clearInterval(timers.get(ticketDiv));
         timers.delete(ticketDiv);
+
+        const startTime = parseInt(ticketDiv.getAttribute('data-start-time')) || 0;
+        const accumulatedTime = parseInt(ticketDiv.getAttribute('data-accumulated-time')) || 0;
+        const elapsedTime = Date.now() - startTime;
+        const newAccumulatedTime = accumulatedTime + elapsedTime;
+
+        ticketDiv.setAttribute('data-accumulated-time', newAccumulatedTime);
     }
 }
 
@@ -1034,19 +1070,36 @@ function addNewTicket() {
             return hours * 3600 + minutes * 60 + seconds;
         }
 
+function calculateTotalTimeFromMilliseconds(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+
         function startTimer(ticketDiv, resumeFrom = null) {
             const timerDisplay = ticketDiv.querySelector('.timer');
-            const tsInput = ticketDiv.querySelector('input');
+            const tsInput = ticketDiv.querySelector('.input-time');
             const ts = timeToSeconds(tsInput.value || '0:0:0');
             let timeLeft = resumeFrom !== null ? resumeFrom : ts;
             let timerType = ticketDiv.getAttribute('data-timer-type');
+
+            if (timers.has(ticketDiv)) {
+                clearInterval(timers.get(ticketDiv));
+            }
+
+            const startTime = Date.now(); // Capture the start time
+            ticketDiv.setAttribute('data-start-time', startTime);
 
             const timer = setInterval(() => {
                 if (timerType === 'T' && timeLeft > 0) {
                     timeLeft--;
                     updateTimerDisplay(timerDisplay, timeLeft, 'T');
                     updateTicketColor(ticketDiv, timeLeft / ts);
-                    
+
                     if (timeLeft === 0) {
                         timerType = 'A';
                         ticketDiv.setAttribute('data-timer-type', 'A');
@@ -1061,23 +1114,38 @@ function addNewTicket() {
             }, 1000);
 
             timers.set(ticketDiv, timer);
-        }
+}
 
         function archiveTicket(ticketDiv) {
             validatePasswordAndExecute((username) => {
                 // Coleta todos os valores necessários
+                const tempoPrevisto = ticketDiv.querySelector('input[type="text"]').value;
+                const horaInicio = ticketDiv.querySelector('input[id="hora_inicio"]').value;
+                const horaFim = new Date().toLocaleTimeString(); // Define hora de fim como hora atual
+
+                // Calculate the total execution time
+                const tempoDecorrido = calculateTotalTime(horaInicio, horaFim);
+
+                // Calculate the total time in seconds
+                const tempoPrevistoSeconds = timeToSeconds(tempoPrevisto);
+                const tempoDecorridoSeconds = timeToSeconds(tempoDecorrido);
+
+                // Determine the status of the deadline
+                const statusPrazo = tempoDecorridoSeconds <= tempoPrevistoSeconds ? 'No Prazo' : 'Fora do Prazo (A)';
+
                 const ticket = {
-                    tempo_previsto: ticketDiv.querySelector('input[type="text"]').value,
+                    tempo_previsto: tempoPrevisto,
                     cliente: ticketDiv.querySelector('select[id="CLIENTE"]').value,
                     problema: ticketDiv.querySelector('select[id="PROBLEMA"]').value,
                     operador: ticketDiv.querySelector('select[id="OPERADOR"]').value,
                     executor: ticketDiv.querySelector('select[id="EXECULTOR"]').value,
-                    hora_inicio: ticketDiv.querySelector('input[id="hora_inicio"]').value,
-                    hora_fim: new Date().toLocaleTimeString(), // Define hora de fim como hora atual
+                    hora_inicio: horaInicio,
+                    hora_fim: horaFim,
                     arquivado_por: username,
-                    inicio: ticketDiv.querySelector('input[id="hora_inicio"]').value,
-                    fim: new Date().toLocaleTimeString(),
-                    tempo_decorrido: ticketDiv.querySelector('.timer').textContent
+                    inicio: horaInicio,
+                    fim: horaFim,
+                    tempo_decorrido: tempoDecorrido, // Store the actual time spent
+                    status_prazo: statusPrazo // Add status of the deadline
                 };
 
                 // Verifica se há dados essenciais antes de arquivar
@@ -1109,8 +1177,7 @@ function addNewTicket() {
 
                 alert('Chamado arquivado com sucesso!');
             });
-        }
-
+}
         function validatePasswordAndExecute(callback) {
             const username = prompt('Digite seu nome de usuário:');
             const password = prompt('Digite sua senha:');
@@ -1125,21 +1192,24 @@ function addNewTicket() {
     }
 
 
-        function calculateTotalTime(ticketDiv) {
-            const hora_inicio = ticketDiv.querySelector('input[id="hora_inicio"]').value;
-            const hora_fim = ticketDiv.querySelector('input[id="hora_fim"]').value;
-            if (!hora_inicio || !hora_fim) return "00:00:00";
-            
-            const start = new Date(`1970/01/01 ${hora_inicio}`);
-            const end = new Date(`1970/01/01 ${hora_fim}`);
+        function calculateTotalTime(startTime, endTime) {
+            const start = new Date(`1970-01-01T${startTime}Z`);
+            const end = new Date(`1970-01-01T${endTime}Z`);
             const diff = Math.floor((end - start) / 1000);
-            
+
             const hours = Math.floor(diff / 3600);
             const minutes = Math.floor((diff % 3600) / 60);
             const seconds = diff % 60;
-            
+
             return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        }
+}
+
+function timeToSeconds(timeStr) {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(':').map(Number);
+    while (parts.length < 3) parts.unshift(0);
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+}
 
 
         function showDatabase() {
@@ -1175,18 +1245,6 @@ function addNewTicket() {
                 filteredData = filteredData.filter(t => 
                     t.executor && t.executor.toLowerCase().includes(filters.executor.toLowerCase())
                 );
-            }
-            if (filters.status && filters.status.trim() !== '') {
-                filteredData = filteredData.filter(t => {
-                    if (filters.status === 'No Prazo') {
-                        return t.tempo_decorrido && t.tempo_decorrido.startsWith('T') && !t.tempo_decorrido.includes('Fora');
-                    } else if (filters.status === 'Fora do Prazo (T)') {
-                        return t.tempo_decorrido && t.tempo_decorrido.startsWith('T') && t.tempo_decorrido.includes('Fora');
-                    } else if (filters.status === 'Fora do Prazo (A)') {
-                        return t.tempo_decorrido && t.tempo_decorrido.startsWith('A');
-                    }
-                    return false;
-                });
             }
             if (filters.month && filters.month.trim() !== '') {
                 const [filterYear, filterMonth] = filters.month.split('-');
