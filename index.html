@@ -236,9 +236,6 @@
 
         // Update database table function remains the same but only updates SLA when database is visible
         function updateDatabaseTable(filters = {}) {
-            const databaseView = document.getElementById('databaseView');
-            if (databaseView.style.display === 'none') return;
-
             const tbody = document.getElementById('databaseTableBody');
             tbody.innerHTML = '';
 
@@ -255,6 +252,21 @@
                     t.operador && t.operador.toLowerCase().includes(filters.operador.toLowerCase())
                 );
             }
+            if (filters.cliente && filters.cliente.trim() !== '') {
+                filteredData = filteredData.filter(t => 
+                    t.cliente && t.cliente.toLowerCase().includes(filters.cliente.toLowerCase())
+                );
+            }
+            if (filters.executor && filters.executor.trim() !== '') {
+                filteredData = filteredData.filter(t => 
+                    t.executor && t.executor.toLowerCase().includes(filters.executor.toLowerCase())
+                );
+            }
+            if (filters.status && filters.status.trim() !== '') {
+                filteredData = filteredData.filter(t => 
+                    t.status_prazo && t.status_prazo.toLowerCase().includes(filters.status.toLowerCase())
+                );
+            }
             if (filters.month && filters.month.trim() !== '') {
                 const [filterYear, filterMonth] = filters.month.split('-');
                 filteredData = filteredData.filter(t => {
@@ -269,23 +281,24 @@
             filteredData.forEach(ticket => {
                 const row = tbody.insertRow();
                 const cells = [
-                ticket.tempo_previsto || '',
-                ticket.cliente || '',
-                ticket.problema || '',
-                ticket.operador || '',
-                ticket.executor || '',
-                ticket.inicio ? `${new Date(ticket.inicio).toLocaleDateString()} ${new Date(ticket.inicio).toLocaleTimeString()}` : '',
-                ticket.arquivado_por || '',
-                ticket.fim || '',
-                ticket.tempo_decorrido || ''
-            ];
+                    ticket.tempo_previsto || '',
+                    ticket.cliente || '',
+                    ticket.problema || '',
+                    ticket.operador || '',
+                    ticket.executor || '',
+                    ticket.inicio ? `${new Date(ticket.inicio).toLocaleDateString()} ${new Date(ticket.inicio).toLocaleTimeString()}` : '',
+                    ticket.arquivado_por || '',
+                    ticket.fim || '',
+                    ticket.tempo_decorrido || '',
+                    ticket.status_prazo || '' // Ensure STATUS DO PRAZO is displayed
+                ];
 
                 cells.forEach(value => {
                     const cell = row.insertCell();
                     cell.textContent = value;
-                });
-            });
-        }
+        });
+    });
+}
 
         // Rest of your JavaScript code remains the same...
     </script>
@@ -509,6 +522,9 @@ function archiveTicket(ticketDiv) {
         const dataAbertura = ticketDiv.querySelector('input[id="data_abertura"]').value; // Get the opening date
         const horaFim = new Date().toLocaleTimeString(); // Set end time as current time
 
+        // Combine date and time for opening
+        const dataHoraAbertura = `${dataAbertura} ${horaInicio}`;
+
         // Calculate the total execution time
         const tempoDecorrido = calculateTotalTime(horaInicio, horaFim);
 
@@ -517,7 +533,13 @@ function archiveTicket(ticketDiv) {
         const tempoDecorridoSeconds = timeToSeconds(tempoDecorrido);
 
         // Determine the status of the deadline
-        const statusPrazo = tempoDecorridoSeconds <= tempoPrevistoSeconds ? 'No Prazo' : 'Fora do Prazo (A)';
+        let statusPrazo;
+        const timerType = ticketDiv.getAttribute('data-timer-type');
+        if (timerType === 'T' && tempoDecorridoSeconds <= tempoPrevistoSeconds) {
+            statusPrazo = 'No Prazo';
+        } else {
+            statusPrazo = 'Fora do Prazo (A)';
+        }
 
         const ticket = {
             tempo_previsto: tempoPrevisto,
@@ -525,11 +547,10 @@ function archiveTicket(ticketDiv) {
             problema: ticketDiv.querySelector('select[id="PROBLEMA"]').value,
             operador: ticketDiv.querySelector('select[id="OPERADOR"]').value,
             executor: ticketDiv.querySelector('select[id="EXECULTOR"]').value,
-            hora_inicio: horaInicio,
-            data_abertura: dataAbertura, // Store the opening date
+            data_hora_abertura: dataHoraAbertura, // Store the combined opening date and time
             hora_fim: horaFim,
             arquivado_por: username,
-            inicio: horaInicio,
+            inicio: dataHoraAbertura, // Use combined opening date and time
             fim: horaFim,
             tempo_decorrido: tempoDecorrido, // Store the actual time spent
             status_prazo: statusPrazo // Add status of the deadline
