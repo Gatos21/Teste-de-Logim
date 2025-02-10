@@ -11,13 +11,11 @@
             box-sizing: border-box;
             font-family: Arial, sans-serif;
         }
-}
 
         body {
             padding: 20px;
             background-color: #f0f0f0;
         }
-
 
         #loginContainer {
             max-width: 300px;
@@ -164,62 +162,79 @@
 
         <h2>Registros de Chamados</h2>
         <div class="input-group">
-    <label>Filtrar por PROBLEMA:</label>
-    <input list="problemaOptions" id="filterPR">
-    <datalist id="problemaOptions">
-        <option value="PROBLEMA1"></option>
-        <option value="PROBLEMA2"></option>
-        <!-- Add more options as needed -->
-    </datalist>
+            <label>Filtrar por PROBLEMA:</label>
+            <input list="problemaOptions" id="filterPR">
+            <datalist id="problemaOptions">
+                <option value="PROBLEMA1"></option>
+                <option value="PROBLEMA2"></option>
+                <!-- Add more options as needed -->
+            </datalist>
 
-    <label>Filtrar por OPERADOR:</label>
-    <input list="operadorOptions" id="filterOP">
-    <datalist id="operadorOptions">
-        <option value="Castelo"></option>
-        <option value="Marcelo"></option>
-        <option value="Julia"></option>
-        <option value="Kaline"></option>
-        <option value="Gabriel"></option>
-        <option value="Jefferson"></option>
-        <!-- Add more options as needed -->
-    </datalist>
+            <label>Filtrar por OPERADOR:</label>
+            <input list="operadorOptions" id="filterOP">
+            <datalist id="operadorOptions">
+                <option value="Castelo"></option>
+                <option value="Marcelo"></option>
+                <option value="Julia"></option>
+                <option value="Kaline"></option>
+                <option value="Gabriel"></option>
+                <option value="Jefferson"></option>
+                <!-- Add more options as needed -->
+            </datalist>
 
-    <label>Filtrar por CLIENTE:</label>
-    <input list="clienteOptions" id="filterCL">
-    <datalist id="clienteOptions">
-        <option value="CLIENTE1"></option>
-        <option value="CLIENTE2"></option>
-        <!-- Add more options as needed -->
-    </datalist>
-    
-    <label>Filtrar por EXECULTOR:</label>
-    <input list="executorOptions" id="filterEX">
-    <datalist id="executorOptions">
-        <option value="Airton"></option>
-        <option value="Damião"></option>
-        <option value="Daniel"></option>
-        <option value="Alison"></option>
-        <!-- Add more options as needed -->
-    </datalist>
+            <label>Filtrar por CLIENTE:</label>
+            <input list="clienteOptions" id="filterCL">
+            <datalist id="clienteOptions">
+                <option value="CLIENTE1"></option>
+                <option value="CLIENTE2"></option>
+                <!-- Add more options as needed -->
+            </datalist>
+            
+            <label>Filtrar por EXECULTOR:</label>
+            <input list="executorOptions" id="filterEX">
+            <datalist id="executorOptions">
+                <option value="Airton"></option>
+                <option value="Damião"></option>
+                <option value="Daniel"></option>
+                <option value="Alison"></option>
+                <!-- Add more options as needed -->
+            </datalist>
 
-    <label>Filtrar por STATUS DO PRAZO:</label>
-    <input list="statusOptions" id="filterStatus">
-    <datalist id="statusOptions">
-        <option value="No Prazo"></option>
-        <option value="Fora do Prazo (A)"></option>
-        <!-- Add more options as needed -->
-    </datalist>
+            <label>Filtrar por STATUS DO PRAZO:</label>
+            <input list="statusOptions" id="filterStatus">
+            <datalist id="statusOptions">
+                <option value="No Prazo"></option>
+                <option value="Fora do Prazo (A)"></option>
+                <!-- Add more options as needed -->
+            </datalist>
 
-    <label>Filtrar por MÊS:</label>
-    <input type="month" id="filterMonth">
-    <button onclick="applyFilters()">Aplicar Filtros</button>
+            <label>Filtrar por DATA:</label>
+            <input type="date" id="filterDate">
+            <button onclick="applyFilters()">Aplicar Filtros</button>
+        </div>
+
+        <table id="databaseTable">
+            <thead>
+                <tr>
+                    <th>TEMPO</th>
+                    <th>CLIENTE</th>
+                    <th>PROBLEMA</th>
+                    <th>OPERADOR</th>
+                    <th>EXECULTOR</th>
+                    <th>HORA DE ABERTURA</th>
+                    <th>ARQUIVADO POR:</th>
+                    <th>HORA DE ENCERRAMENTO</th>
+                    <th>TEMPO DE EXECUÇÃO</th>
+                    <th>STATUS DO PRAZO</th>
+                </tr>
+            </thead>
+            <tbody id="databaseTableBody"></tbody>
+        </table>
+    </div>
 </div>
 
-
-<!-- Modify the showDatabase function -->
- <script>
-        // Remove initialization of SLA statistics on page load
-        document.addEventListener('DOMContentLoaded', () => {
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
             const databaseView = document.getElementById('databaseView');
             databaseView.style.display = 'none';
         });
@@ -267,16 +282,16 @@
                     t.status_prazo && t.status_prazo.toLowerCase().includes(filters.status.toLowerCase())
                 );
             }
-            if (filters.month && filters.month.trim() !== '') {
-                const [filterYear, filterMonth] = filters.month.split('-');
+            if (filters.date && filters.date.trim() !== '') {
+                const filterDate = new Date(filters.date);
                 filteredData = filteredData.filter(t => {
                     if (!t.inicio) return false;
                     const ticketDate = new Date(t.inicio);
-                    return ticketDate.getFullYear() === parseInt(filterYear) &&
-                           ticketDate.getMonth() === (parseInt(filterMonth) - 1);
+                    return ticketDate.getFullYear() === filterDate.getFullYear() &&
+                           ticketDate.getMonth() === filterDate.getMonth() &&
+                           ticketDate.getDate() === filterDate.getDate();
                 });
-            }
-
+}
             // Render filtered data...
             filteredData.forEach(ticket => {
                 const row = tbody.insertRow();
@@ -296,294 +311,276 @@
                 cells.forEach(value => {
                     const cell = row.insertCell();
                     cell.textContent = value;
-        });
-    });
-}
+                });
 
-        // Rest of your JavaScript code remains the same...
-    </script>
-            <table id="databaseTable">
-    <thead>
-        <tr>
-            <th>TEMPO</th>
-            <th>CLIENTE</th>
-            <th>PROBLEMA</th>
-            <th>OPERADOR</th>
-            <th>EXECULTOR</th>
-            <th>HORA DE ABERTURA</th>
-            <th>ARQUIVADO POR:</th>
-            <th>HORA DE ENCERRAMENTO</th>
-            <th>TEMPO DE EXECUÇÃO</th>
-            <th>STATUS DO PRAZO</th>
-    </thead>
-    <tbody id="databaseTableBody"></tbody>
-</table>
-            <tbody id="databaseTableBody"></tbody>
-        </table>
-    </div>
-</div>
-
-    <script>
-        const users = [
-            ["Jefferson", "123123"],
-            ["Castelo", "123123"],
-            ["Gabriel", "123123"],
-            ["Kaline", "123123"],
-            ["Julia", "123123"],
-            ["Virgilio", "123123"],
-            ["James", "123123"],
-            ["Marcelo", "123123"]
-        ];
-
-        const operadores = ["", "Castelo", "Marcelo", "Julia", "kaline", "Gabriel", "Jeffeson"];
-        const executores = ["", "Airton", "Damião", "Daniel", "Alison"];
-        const problemas = ["","Acesso Lento","Acréscimo de canais","Adição de equipamento","Ajuste no IPV6","Ativação de Link","Ativação de Telefonia","Cliente entrou em contato pedindo uma informação tecnica","Falha elétrica no cliente”,“Falha elétrica no POP da Inovanet","Falha no equipamento da Inovanet","Falha no fornecimento de internet pela ALGAR","Falha no fornecimento de internet pela BR DIGITAL","Falha no link de transporte","Help Desk Presencial","Help Desk Remoto","Help Desk Telefonia","implantar cabo de internet","Mudança de endereço","Mudança de Equipamentos","Mudança de Local do Aparelho","Operadora de telefonia com falha de rotas","Orçamento","Outros","Portabilidade da linha","Problema na Hybrid","Problemas com páginas","Problemas no VOIP","Recolher equipamento","Rompimento do Backbone em Natal","Rompimento do drop do cliente em Ceará-Mirim","Rompimento do drop do cliente em Mossoró","Rompimento do drop do cliente em Natal","Rompimento do drop do cliente em Parnamirim","Rompimento no drop em STO","Rompimento no transporte da Intelnet","Rompimento no transporte para Ceará-Mirim","Rompimento no transporte para São José de Mipibu","Sem Acesso","Sem ping","Solicitação BGP","Solicitação de linha nova","Troca de CEO","Troca de conector tipo click","Troca de conector tipo RJ45","Troca de CTO","Troca de DROP","Troca de fonte com defeito","Troca de splitter"];
-        const ncOpcoes = ["","476","490","135","240","306","317","318","169","110","184","40","65","224","251","370","214","215","342","520","199","467","242","457","22","327","498","500","417","216","248","210","247","80","24","152","51","195","69","205","358","115","119","50","549","550","191","365","13","151","470","405","359","334","404","399","407","55","424","462","469","535","435","222","176","319","570","441","436","437","438","43","446","225","323","15","491","54","109","515","538","539","553","552","21","483","264","37","88","4","245","354","501","447","494","475","418","182","26","512","572","157","187","361","536","243","217","582","579","442","310","198","160","8","161","158","137","165","212","305","140","534","532","132","235","303","433","2","311","285","229","409","465","521","153","527","196","332","5","328","324","408","211","519","422","421","78","471","174","73","67","403","338","102","238","201","396","428","410","406","580","489","518","180","181","260","577","492","559","188","44","297","479","524","148","87","453","108","452","236","444","454","445","448","449","308","309","76","565","466","170","171","360","374","371","555","156","146","484","516","514","197","254","255","413","378","456","507","523","104","185","289","496","463","537","60","18","36","290","316","425","27","257","529","584","574","458","495","48","427","368","213","241","43","517","190","499","522","509","510","511","583","124","431","551","228","322","321","262","394","352","275","315","263","283","280","270","276","295","246","353","302","232","451","506","343","286","325","485","220","189","575","155","573","414","505","143","144","123","330","480","434","96","17","493","531","145","347","557","432","271","416","223","450","369","478","571","576","298","391","388","389","393","390","162","340","204"]
-        let database = JSON.parse(localStorage.getItem('ticketDatabase')) || [];
-        let timers = new Map();
-        let accumulatedTimes = new Map();
-
-        function login() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            const user = users.find(u => u[0] === username && u[1] === password);
-            
-            if (user) {
-                document.getElementById('loginContainer').style.display = 'none';
-                document.getElementById('mainContainer').style.display = 'block';
-            } else {
-                document.getElementById('loginError').textContent = 'Usuário ou senha incorretos';
-            }
-        }
-
-        function createSelect(options, id) {
-            const select = document.createElement('select');
-            select.id = id;
-            options.forEach(option => {
-                const opt = document.createElement('option');
-                opt.value = option;
-                opt.textContent = option;
-                select.appendChild(opt);
+                // Add color class based on the ticket status
+                if (ticket.status_prazo === 'No Prazo') {
+                    row.classList.add('green');
+                } else if (ticket.status_prazo === 'Fora do Prazo (A)') {
+                    row.classList.add('red');
+                }
             });
-            return select;
         }
-
-
-function addNewTicket() {
-    const ticketList = document.getElementById('ticketList');
-    const ticketDiv = document.createElement('div');
-    ticketDiv.className = 'ticket-row';
-    
-    const fields = {
-        tempo_previsto: document.createElement('input'),
-        CLIENTE: createSelect(ncOpcoes, 'CLIENTE'),
-        PROBLEMA: createSelect(problemas, 'PROBLEMA'),
-        OPERADOR: createSelect(operadores, 'OPERADOR'),
-        EXECULTOR: createSelect(executores, 'EXECULTOR'),
-        hora_inicio: document.createElement('input'),
-        data_abertura: document.createElement('input'), // Add input for opening date
-        hora_fim: document.createElement('input')
-    };
-
-    // Configure input fields
-    fields.tempo_previsto.type = 'text';
-    fields.tempo_previsto.className = 'input-time';
-    fields.tempo_previsto.placeholder = 'H:M:S';
-    
-    // Input formatting for time
-    fields.tempo_previsto.addEventListener('input', function(e) {
-        e.target.value = e.target.value.replace(/[^0-9:]/g, ''); // Remove non-numeric characters except ':'
-    });
-
-    fields.tempo_previsto.addEventListener('blur', function(e) {
-        if (e.target.value) {
-            let parts = e.target.value.split(':');
-            parts = parts.map(part => part.padStart(2, '0')); // Pad with zeros and limit to 3 parts
-            while (parts.length < 3) parts.push('00');
-            e.target.value = parts.slice(0, 3).join(':');
-        }
-    });
-
-    // Set read-only fields
-    fields.hora_inicio.readOnly = true;
-    fields.hora_inicio.id = 'hora_inicio';
-    fields.data_abertura.readOnly = true;
-    fields.data_abertura.id = 'data_abertura'; // Set ID for opening date
-    fields.hora_fim.readOnly = true;
-    fields.hora_fim.id = 'hora_fim';
-
-    // Create labels and append fields
-    Object.entries(fields).forEach(([key, field]) => {
-        const label = document.createElement('label');
-        label.textContent = {
-            'tempo_previsto': 'TEMPO PREVISTO:',
-            'hora_inicio': 'HORA DE INÍCIO:',
-            'data_abertura': 'DATA DE ABERTURA:', // Add label for opening date
-            'hora_fim': 'HORA DE FIM:'
-        }[key] || key.toUpperCase() + ':';
-        ticketDiv.appendChild(label);
-        ticketDiv.appendChild(field);
-    });
-
-    // Timer display
-    const timerDisplay = document.createElement('div');
-    timerDisplay.className = 'timer';
-    timerDisplay.textContent = 'T: 00:00:00';
-    ticketDiv.setAttribute('data-timer-type', 'T');
-    ticketDiv.setAttribute('data-timer-state', 'stopped');
-    ticketDiv.setAttribute('data-accumulated-time', '0');
-    
-    // Button container
-    const buttonContainer = document.createElement('div');
-    const buttonActions = [
-        { icon: 'fas fa-play', handler: 'iniciar' },
-        { icon: 'fas fa-pause', handler: 'pausar' },
-        { icon: 'fas fa-archive', handler: 'arquivar' },
-        { icon: 'fas fa-trash', handler: 'excluir' }
+    const users = [
+        ["Jefferson", "123123"],
+        ["Castelo", "123123"],
+        ["Gabriel", "123123"],
+        ["Kaline", "123123"],
+        ["Julia", "123123"],
+        ["Virgilio", "123123"],
+        ["James", "123123"],
+        ["Marcelo", "123123"]
     ];
 
-    buttonActions.forEach(({ icon, handler }) => {
-        const button = document.createElement('button');
-        button.innerHTML = `<i class="${icon}"></i>`;
-        button.onclick = () => handleTicketAction(handler, ticketDiv);
-        buttonContainer.appendChild(button);
-    });
+    const operadores = ["", "Castelo", "Marcelo", "Julia", "kaline", "Gabriel", "Jeffeson"];
+    const executores = ["", "Airton", "Damião", "Daniel", "Alison"];
+    const problemas = ["","Acesso Lento","Acréscimo de canais","Adição de equipamento","Ajuste no IPV6","Ativação de Link","Ativação de Telefonia","Cliente entrou em contato pedindo uma informação tecnica","Falha elétrica no cliente”,“Falha elétrica no POP da Inovanet","Falha no equipamento da Inovanet","Falha no fornecimento de internet pela ALGAR","Falha no fornecimento de internet pela BR DIGITAL","Falha no link de transporte","Help Desk Presencial","Help Desk Remoto","Help Desk Telefonia","implantar cabo de internet","Mudança de endereço","Mudança de Equipamentos","Mudança de Local do Aparelho","Operadora de telefonia com falha de rotas","Orçamento","Outros","Portabilidade da linha","Problema na Hybrid","Problemas com páginas","Problemas no VOIP","Recolher equipamento","Rompimento do Backbone em Natal","Rompimento do drop do cliente em Ceará-Mirim","Rompimento do drop do cliente em Mossoró","Rompimento do drop do cliente em Natal","Rompimento do drop do cliente em Parnamirim","Rompimento no drop em STO","Rompimento no transporte da Intelnet","Rompimento no transporte para Ceará-Mirim","Rompimento no transporte para São José de Mipibu","Sem Acesso","Sem ping","Solicitação BGP","Solicitação de linha nova","Troca de CEO","Troca de conector tipo click","Troca de conector tipo RJ45","Troca de CTO","Troca de DROP","Troca de fonte com defeito","Troca de splitter"];
+    const ncOpcoes = ["","476","490","135","240","306","317","318","169","110","184","40","65","224","251","370","214","215","342","520","199","467","242","457","22","327","498","500","417","216","248","210","247","80","24","152","51","195","69","205","358","115","119","50","549","550","191","365","13","151","470","405","359","334","404","399","407","55","424","462","469","535","435","222","176","319","570","441","436","437","438","43","446","225","323","15","491","54","109","515","538","539","553","552","21","483","264","37","88","4","245","354","501","447","494","475","418","182","26","512","572","157","187","361","536","243","217","582","579","442","310","198","160","8","161","158","137","165","212","305","140","534","532","132","235","303","433","2","311","285","229","409","465","521","153","527","196","332","5","328","324","408","211","519","422","421","78","471","174","73","67","403","338","102","238","201","396","428","410","406","580","489","518","180","181","260","577","492","559","188","44","297","479","524","148","87","453","108","452","236","444","454","445","448","449","308","309","76","565","466","170","171","360","374","371","555","156","146","484","516","514","197","254","255","413","378","456","507","523","104","185","289","496","463","537","60","18","36","290","316","425","27","257","529","584","574","458","495","48","427","368","213","241","43","517","190","499","522","509","510","511","583","124","431","551","228","322","321","262","394","352","275","315","263","283","280","270","276","295","246","353","302","232","451","506","343","286","325","485","220","189","575","155","573","414","505","143","144","123","330","480","434","96","17","493","531","145","347","557","432","271","416","223","450","369","478","571","576","298","391","388","389","393","390","162","340","204"]
+    let database = JSON.parse(localStorage.getItem('ticketDatabase')) || [];
+    let timers = new Map();
+    let accumulatedTimes = new Map();
 
-    ticketDiv.appendChild(timerDisplay);
-    ticketDiv.appendChild(buttonContainer);
-    ticketList.appendChild(ticketDiv);
-}
-
-function handleTicketAction(action, ticketDiv) {
-    switch(action) {
-        case 'iniciar':
-            if (ticketDiv.getAttribute('data-timer-state') === 'stopped') {
-                const tsInput = ticketDiv.querySelector('.input-time');
-                if (!tsInput || !tsInput.value || !isValidTimeFormat(tsInput.value)) {
-                    alert('Por favor, insira um tempo válido no formato H:M:S');
-                    return;
-                }
-                const currentTime = new Date().toLocaleTimeString();
-                const currentDate = new Date().toLocaleDateString();
-                const horaInicioInput = ticketDiv.querySelector('input[id="hora_inicio"]');
-                const dataAberturaInput = ticketDiv.querySelector('input[id="data_abertura"]');
-                if (horaInicioInput) {
-                    horaInicioInput.value = currentTime;
-                }
-                if (dataAberturaInput) {
-                    dataAberturaInput.value = currentDate;
-                }
-                startTimer(ticketDiv);
-                ticketDiv.setAttribute('data-timer-state', 'running');
-            }
-            break;
+    function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
         
-        case 'pausar':
-            const timerState = ticketDiv.getAttribute('data-timer-state');
-            if (timerState === 'running') {
-                const currentTime = new Date().toLocaleTimeString();
-                const horaFimInput = ticketDiv.querySelector('input[id="hora_fim"]');
-                if (horaFimInput) {
-                    horaFimInput.value = currentTime;
-                }
-                const currentTimerValue = getTimerValue(ticketDiv);
-                ticketDiv.setAttribute('data-last-time', currentTimerValue.toString());
-                pauseTimer(ticketDiv);
-                ticketDiv.setAttribute('data-timer-state', 'stopped');
-            } else if (timerState === 'stopped') {
-                const lastTime = parseInt(ticketDiv.getAttribute('data-last-time')) || 0;
-                startTimer(ticketDiv, lastTime);
-                ticketDiv.setAttribute('data-timer-state', 'running');
-            }
-            break;
+        const user = users.find(u => u[0] === username && u[1] === password);
         
-        case 'arquivar':
-            archiveTicket(ticketDiv);
-            break;
-        
-        case 'excluir':
-            validatePasswordAndExecute(() => {
-                if (timers.has(ticketDiv)) {
-                    clearInterval(timers.get(ticketDiv));
-                    timers.delete(ticketDiv);
-                }
-                ticketDiv.remove();
-            });
-            break;
-    }
-}
-
-function archiveTicket(ticketDiv) {
-    validatePasswordAndExecute((username) => {
-        // Collect all necessary values
-        const tempoPrevisto = ticketDiv.querySelector('input[type="text"]').value;
-        const horaInicio = ticketDiv.querySelector('input[id="hora_inicio"]').value;
-        const dataAbertura = ticketDiv.querySelector('input[id="data_abertura"]').value; // Get the opening date
-        const horaFim = new Date().toLocaleTimeString(); // Set end time as current time
-
-        // Combine date and time for opening
-        const dataHoraAbertura = `${dataAbertura} ${horaInicio}`;
-
-        // Calculate the total execution time
-        const tempoDecorrido = calculateTotalTime(horaInicio, horaFim);
-
-        // Calculate the total time in seconds
-        const tempoPrevistoSeconds = timeToSeconds(tempoPrevisto);
-        const tempoDecorridoSeconds = timeToSeconds(tempoDecorrido);
-
-        // Determine the status of the deadline
-        let statusPrazo;
-        const timerType = ticketDiv.getAttribute('data-timer-type');
-        if (timerType === 'T' && tempoDecorridoSeconds <= tempoPrevistoSeconds) {
-            statusPrazo = 'No Prazo';
+        if (user) {
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('mainContainer').style.display = 'block';
         } else {
-            statusPrazo = 'Fora do Prazo (A)';
+            document.getElementById('loginError').textContent = 'Usuário ou senha incorretos';
         }
+    }
 
-        const ticket = {
-            tempo_previsto: tempoPrevisto,
-            cliente: ticketDiv.querySelector('select[id="CLIENTE"]').value,
-            problema: ticketDiv.querySelector('select[id="PROBLEMA"]').value,
-            operador: ticketDiv.querySelector('select[id="OPERADOR"]').value,
-            executor: ticketDiv.querySelector('select[id="EXECULTOR"]').value,
-            data_hora_abertura: dataHoraAbertura, // Store the combined opening date and time
-            hora_fim: horaFim,
-            arquivado_por: username,
-            inicio: dataHoraAbertura, // Use combined opening date and time
-            fim: horaFim,
-            tempo_decorrido: tempoDecorrido, // Store the actual time spent
-            status_prazo: statusPrazo // Add status of the deadline
+    function createSelect(options, id) {
+        const select = document.createElement('select');
+        select.id = id;
+        options.forEach(option => {
+            const opt = document.createElement('option');
+            opt.value = option;
+            opt.textContent = option;
+            select.appendChild(opt);
+        });
+        return select;
+    }
+
+    function addNewTicket() {
+        const ticketList = document.getElementById('ticketList');
+        const ticketDiv = document.createElement('div');
+        ticketDiv.className = 'ticket-row';
+        
+        const fields = {
+            tempo_previsto: document.createElement('input'),
+            CLIENTE: createSelect(ncOpcoes, 'CLIENTE'),
+            PROBLEMA: createSelect(problemas, 'PROBLEMA'),
+            OPERADOR: createSelect(operadores, 'OPERADOR'),
+            EXECULTOR: createSelect(executores, 'EXECULTOR'),
+            hora_inicio: document.createElement('input'),
+            data_abertura: document.createElement('input'), // Add input for opening date
+            hora_fim: document.createElement('input')
         };
 
-        // Check for essential data before archiving
-        if (!ticket.cliente || !ticket.problema || !ticket.operador || !ticket.executor) {
-            alert('Por favor, preencha todos os campos obrigatórios antes de arquivar.');
-            return;
+        // Configure input fields
+        fields.tempo_previsto.type = 'text';
+        fields.tempo_previsto.className = 'input-time';
+        fields.tempo_previsto.placeholder = 'H:M:S';
+        
+        // Input formatting for time
+        fields.tempo_previsto.addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/[^0-9:]/g, ''); // Remove non-numeric characters except ':'
+        });
+
+        fields.tempo_previsto.addEventListener('blur', function(e) {
+            if (e.target.value) {
+                let parts = e.target.value.split(':');
+                parts = parts.map(part => part.padStart(2, '0')); // Pad with zeros and limit to 3 parts
+                while (parts.length < 3) parts.push('00');
+                e.target.value = parts.slice(0, 3).join(':');
+            }
+        });
+
+        // Set read-only fields
+        fields.hora_inicio.readOnly = true;
+        fields.hora_inicio.id = 'hora_inicio';
+        fields.data_abertura.readOnly = true;
+        fields.data_abertura.id = 'data_abertura'; // Set ID for opening date
+        fields.hora_fim.readOnly = true;
+        fields.hora_fim.id = 'hora_fim';
+
+        // Create labels and append fields
+        Object.entries(fields).forEach(([key, field]) => {
+            const label = document.createElement('label');
+            label.textContent = {
+                'tempo_previsto': 'TEMPO PREVISTO:',
+                'hora_inicio': 'HORA DE INÍCIO:',
+                'data_abertura': 'DATA DE ABERTURA:', // Add label for opening date
+                'hora_fim': 'HORA DE FIM:'
+            }[key] || key.toUpperCase() + ':';
+            ticketDiv.appendChild(label);
+            ticketDiv.appendChild(field);
+        });
+
+        // Timer display
+        const timerDisplay = document.createElement('div');
+        timerDisplay.className = 'timer';
+        timerDisplay.textContent = 'T: 00:00:00';
+        ticketDiv.setAttribute('data-timer-type', 'T');
+        ticketDiv.setAttribute('data-timer-state', 'stopped');
+        ticketDiv.setAttribute('data-accumulated-time', '0');
+        
+        // Button container
+        const buttonContainer = document.createElement('div');
+        const buttonActions = [
+            { icon: 'fas fa-play', handler: 'iniciar' },
+            { icon: 'fas fa-pause', handler: 'pausar' },
+            { icon: 'fas fa-archive', handler: 'arquivar' },
+            { icon: 'fas fa-trash', handler: 'excluir' }
+        ];
+
+        buttonActions.forEach(({ icon, handler }) => {
+            const button = document.createElement('button');
+            button.innerHTML = `<i class="${icon}"></i>`;
+            button.onclick = () => handleTicketAction(handler, ticketDiv);
+            buttonContainer.appendChild(button);
+        });
+
+        ticketDiv.appendChild(timerDisplay);
+        ticketDiv.appendChild(buttonContainer);
+        ticketList.appendChild(ticketDiv);
+    }
+
+    function handleTicketAction(action, ticketDiv) {
+        switch(action) {
+            case 'iniciar':
+                if (ticketDiv.getAttribute('data-timer-state') === 'stopped') {
+                    const tsInput = ticketDiv.querySelector('.input-time');
+                    if (!tsInput || !tsInput.value || !isValidTimeFormat(tsInput.value)) {
+                        alert('Por favor, insira um tempo válido no formato H:M:S');
+                        return;
+                    }
+                    const currentTime = new Date().toLocaleTimeString();
+                    const currentDate = new Date().toLocaleDateString();
+                    const horaInicioInput = ticketDiv.querySelector('input[id="hora_inicio"]');
+                    const dataAberturaInput = ticketDiv.querySelector('input[id="data_abertura"]');
+                    if (horaInicioInput) {
+                        horaInicioInput.value = currentTime;
+                    }
+                    if (dataAberturaInput) {
+                        dataAberturaInput.value = currentDate;
+                    }
+                    startTimer(ticketDiv);
+                    ticketDiv.setAttribute('data-timer-state', 'running');
+                }
+                break;
+            
+            case 'pausar':
+                const timerState = ticketDiv.getAttribute('data-timer-state');
+                if (timerState === 'running') {
+                    const currentTime = new Date().toLocaleTimeString();
+                    const horaFimInput = ticketDiv.querySelector('input[id="hora_fim"]');
+                    if (horaFimInput) {
+                        horaFimInput.value = currentTime;
+                    }
+                    const currentTimerValue = getTimerValue(ticketDiv);
+                    ticketDiv.setAttribute('data-last-time', currentTimerValue.toString());
+                    pauseTimer(ticketDiv);
+                    ticketDiv.setAttribute('data-timer-state', 'stopped');
+                } else if (timerState === 'stopped') {
+                    const lastTime = parseInt(ticketDiv.getAttribute('data-last-time')) || 0;
+                    startTimer(ticketDiv, lastTime);
+                    ticketDiv.setAttribute('data-timer-state', 'running');
+                }
+                break;
+            
+            case 'arquivar':
+                archiveTicket(ticketDiv);
+                break;
+            
+            case 'excluir':
+                validatePasswordAndExecute(() => {
+                    if (timers.has(ticketDiv)) {
+                        clearInterval(timers.get(ticketDiv));
+                        timers.delete(ticketDiv);
+                    }
+                    ticketDiv.remove();
+                });
+                break;
         }
+    }
 
-        // Add the ticket to the database
-        database.push(ticket);
+    function archiveTicket(ticketDiv) {
+        validatePasswordAndExecute((username) => {
+            // Collect all necessary values
+            const tempoPrevisto = ticketDiv.querySelector('input[type="text"]').value;
+            const horaInicio = ticketDiv.querySelector('input[id="hora_inicio"]').value;
+            const dataAbertura = ticketDiv.querySelector('input[id="data_abertura"]').value; // Get the opening date
+            const horaFim = new Date().toLocaleTimeString(); // Set end time as current time
 
-        // Save to localStorage
-        localStorage.setItem('ticketDatabase', JSON.stringify(database));
+            // Combine date and time for opening
+            const dataHoraAbertura = `${dataAbertura} ${horaInicio}`;
 
-        // Stop the timer if it's running
-        if (timers.has(ticketDiv)) {
-            clearInterval(timers.get(ticketDiv));
-            timers.delete(ticketDiv);
-        }
+            // Calculate the total execution time
+            const tempoDecorrido = calculateTotalTime(horaInicio, horaFim);
 
-        // Remove the ticket from the current list
-        ticketDiv.remove();
+            // Calculate the total time in seconds
+            const tempoPrevistoSeconds = timeToSeconds(tempoPrevisto);
+            const tempoDecorridoSeconds = timeToSeconds(tempoDecorrido);
 
-        // Update the database view if it's open
-        const databaseView = document.getElementById('databaseView');
-        if (databaseView.style.display === 'block') {
-            updateDatabaseTable();
-        }
+            // Determine the status of the deadline
+            let statusPrazo;
+            const timerType = ticketDiv.getAttribute('data-timer-type');
+            if (timerType === 'T' && tempoDecorridoSeconds <= tempoPrevistoSeconds) {
+                statusPrazo = 'No Prazo';
+            } else {
+                statusPrazo = 'Fora do Prazo (A)';
+            }
 
-        alert(`Chamado arquivado com sucesso!\nData de abertura: ${dataAbertura} Hora de abertura: ${horaInicio}`);
+            const ticket = {
+                tempo_previsto: tempoPrevisto,
+                cliente: ticketDiv.querySelector('select[id="CLIENTE"]').value,
+                problema: ticketDiv.querySelector('select[id="PROBLEMA"]').value,
+                operador: ticketDiv.querySelector('select[id="OPERADOR"]').value,
+                executor: ticketDiv.querySelector('select[id="EXECULTOR"]').value,
+                data_hora_abertura: dataHoraAbertura, // Store the combined opening date and time
+                hora_fim: horaFim,
+                arquivado_por: username,
+                inicio: dataHoraAbertura, // Use combined opening date and time
+                fim: horaFim,
+                tempo_decorrido: tempoDecorrido, // Store the actual time spent
+                status_prazo: statusPrazo // Add status of the deadline
+            };
+
+            // Check for essential data before archiving
+            if (!ticket.cliente || !ticket.problema || !ticket.operador || !ticket.executor) {
+                alert('Por favor, preencha todos os campos obrigatórios antes de arquivar.');
+                return;
+            }
+
+            // Add the ticket to the database
+            database.push(ticket);
+
+            // Save to localStorage
+            localStorage.setItem('ticketDatabase', JSON.stringify(database));
+
+            // Stop the timer if it's running
+            if (timers.has(ticketDiv)) {
+                clearInterval(timers.get(ticketDiv));
+                timers.delete(ticketDiv);
+            }
+
+            // Remove the ticket from the current list
+            ticketDiv.remove();
+
+            // Update the database view if it's open
+            const databaseView = document.getElementById('databaseView');
+            if (databaseView.style.display === 'block') {
+                updateDatabaseTable();
+            }
+
+            alert(`Chamado arquivado com sucesso!\nData de abertura: ${dataAbertura} Hora de abertura: ${horaInicio}`);
+       
     });
 }
 
@@ -731,11 +728,12 @@ function updateTimerDisplay(display, time, prefix) {
 
         function updateTicketColor(ticketDiv, percentage) {
             ticketDiv.className = 'ticket-row';
-            if (percentage > 0.75) ticketDiv.classList.add('green');
-            else if (percentage > 0.5) ticketDiv.classList.add('yellow');
-            else if (percentage > 0.25) ticketDiv.classList.add('orange');
-            else ticketDiv.classList.add('red');
-        }
+            if (percentage > 0) {
+                ticketDiv.classList.add('green');
+            } else {
+                ticketDiv.classList.add('red');
+            }
+}
 
 
 
@@ -831,19 +829,18 @@ function calculateTotalTimeFromMilliseconds(ms) {
             }
         }
 
+function applyFilters() {
+    const filters = {
+        problema: document.getElementById('filterPR').value,
+        operador: document.getElementById('filterOP').value,
+        cliente: document.getElementById('filterCL').value,
+        executor: document.getElementById('filterEX').value,
+        status: document.getElementById('filterStatus').value,
+        date: document.getElementById('filterDate').value // Corrected this line
+    };
 
-        function applyFilters() {
-            const filters = {
-                problema: document.getElementById('filterPR').value,
-                operador: document.getElementById('filterOP').value,
-                cliente: document.getElementById('filterCL').value,
-                executor: document.getElementById('filterEX').value,
-                status: document.getElementById('filterStatus').value,
-                month: document.getElementById('filterMonth').value
-            };
-
-            console.log('Aplicando filtros:', filters); // Para debug
-            updateDatabaseTable(filters);
+    console.log('Aplicando filtros:', filters); // Para debug
+    updateDatabaseTable(filters);
 }
 
 function clearDatabase() {
