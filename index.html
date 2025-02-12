@@ -597,47 +597,7 @@
     });
 });
 
-function parseDataBR(dataStr) {
-    if (!dataStr) return null;
-    const [dia, mes, ano] = dataStr.split('/').map(num => parseInt(num, 10));
-    return new Date(ano, mes - 1, dia);
-}
 
-    // Adiciona evento de clique ao botão de filtrar
-    const filterButton = document.querySelector('button[onclick="applyFilters()"]');
-    if (filterButton) {
-        filterButton.addEventListener('click', () => {
-            const dateRange = document.getElementById('filterDateRange').value;
-            const filterPR = document.getElementById('filterPR').value;
-            const filterOP = document.getElementById('filterOP').value;
-            const filterCL = document.getElementById('filterCL').value;
-            const filterEX = document.getElementById('filterEX').value;
-            const filterStatus = document.getElementById('filterStatus').value;
-
-            const filters = {
-                problema: filterPR,
-                operador: filterOP,
-                cliente: filterCL,
-                executor: filterEX,
-                status: filterStatus
-            };
-
-            // Processa o intervalo de datas
-            if (dateRange) {
-                const [startDate, endDate] = dateRange.split(' to ');
-                if (startDate) {
-                    filters.startDate = new Date(startDate);
-                    filters.endDate = endDate ? new Date(endDate) : new Date(startDate);
-                    
-                    // Ajusta os horários para incluir o dia inteiro
-                    filters.startDate.setHours(0, 0, 0, 0);
-                    filters.endDate.setHours(23, 59, 59, 999);
-                }
-            }
-
-            updateDatabaseTable(filters);
-        });
-    }
 
         // Update the showDatabase function to manage visibility
         function showDatabase() {
@@ -650,76 +610,83 @@ function parseDataBR(dataStr) {
         }
 
         // Update database table function remains the same but only updates SLA when database is visible
-        function updateDatabaseTable(filters = {}) {
-            const tbody = document.getElementById('databaseTableBody');
-            tbody.innerHTML = '';
+function updateDatabaseTable(filters = {}) {
+    const tbody = document.getElementById('databaseTableBody');
+    tbody.innerHTML = '';
 
-            let filteredData = [...database];
+    let filteredData = [...database];
 
-            // Apply existing filters...
-            if (filters.problema && filters.problema.trim() !== '') {
-                filteredData = filteredData.filter(t => 
-                    t.problema && t.problema.toLowerCase().includes(filters.problema.toLowerCase())
-                );
-            }
-            if (filters.operador && filters.operador.trim() !== '') {
-                filteredData = filteredData.filter(t => 
-                    t.operador && t.operador.toLowerCase().includes(filters.operador.toLowerCase())
-                );
-            }
-            if (filters.cliente && filters.cliente.trim() !== '') {
-                filteredData = filteredData.filter(t => 
-                    t.cliente && t.cliente.toLowerCase().includes(filters.cliente.toLowerCase())
-                );
-            }
-            if (filters.executor && filters.executor.trim() !== '') {
-                filteredData = filteredData.filter(t => 
-                    t.executor && t.executor.toLowerCase().includes(filters.executor.toLowerCase())
-                );
-            }
-            if (filters.status && filters.status.trim() !== '') {
-                filteredData = filteredData.filter(t => 
-                    t.status_prazo && t.status_prazo.toLowerCase().includes(filters.status.toLowerCase())
-                );
-            }
-            if (filters.startDate && filters.endDate) {
-                const filterStartDate = new Date(filters.startDate);
-                const filterEndDate = new Date(filters.endDate);
-                filteredData = filteredData.filter(t => {
-                    if (!t.inicio) return false;
-                    const ticketDate = new Date(t.inicio);
-                    return ticketDate >= filterStartDate && ticketDate <= filterEndDate;
-                });
-}
-            // Render filtered data...
-            filteredData.forEach(ticket => {
-                const row = tbody.insertRow();
-                const cells = [
-                    ticket.tempo_previsto || '',
-                    ticket.cliente || '',
-                    ticket.problema || '',
-                    ticket.operador || '',
-                    ticket.executor || '',
-                    ticket.inicio ? `${new Date(ticket.inicio).toLocaleDateString()} ${new Date(ticket.inicio).toLocaleTimeString()}` : '',
-                    ticket.arquivado_por || '',
-                    ticket.fim || '',
-                    ticket.tempo_decorrido || '',
-                    ticket.status_prazo || '' // Ensure STATUS DO PRAZO is displayed
-                ];
+    // Aplica filtros de texto
+    if (filters.problema) {
+        filteredData = filteredData.filter(t => 
+            t.problema && t.problema.toLowerCase().includes(filters.problema.toLowerCase())
+        );
+    }
+    if (filters.operador) {
+        filteredData = filteredData.filter(t => 
+            t.operador && t.operador.toLowerCase().includes(filters.operador.toLowerCase())
+        );
+    }
+    if (filters.cliente) {
+        filteredData = filteredData.filter(t => 
+            t.cliente && t.cliente.toLowerCase().includes(filters.cliente.toLowerCase())
+        );
+    }
+    if (filters.executor) {
+        filteredData = filteredData.filter(t => 
+            t.executor && t.executor.toLowerCase().includes(filters.executor.toLowerCase())
+        );
+    }
+    if (filters.status) {
+        filteredData = filteredData.filter(t => 
+            t.status_prazo && t.status_prazo.toLowerCase().includes(filters.status.toLowerCase())
+        );
+    }
 
-                cells.forEach(value => {
-                    const cell = row.insertCell();
-                    cell.textContent = value;
-                });
+    // Aplica filtro de data com novo tratamento
+    if (filters.startDate && filters.endDate) {
+        filteredData = filteredData.filter(ticket => {
+            if (!ticket.inicio) return false;
+            
+            const ticketDate = parseDateTimeStr(ticket.inicio);
+            if (!ticketDate) return false;
 
-                // Add color class based on the ticket status
-                if (ticket.status_prazo === 'No Prazo') {
-                    row.classList.add('green');
-                } else if (ticket.status_prazo === 'Fora do Prazo (A)') {
-                    row.classList.add('red');
-                }
-            });
+            // Compara apenas as datas, ignorando o horário
+            return ticketDate >= filters.startDate && ticketDate <= filters.endDate;
+        });
+    }
+
+    // Renderiza os dados filtrados
+    filteredData.forEach(ticket => {
+        const row = tbody.insertRow();
+        const cells = [
+            ticket.tempo_previsto || '',
+            ticket.cliente || '',
+            ticket.problema || '',
+            ticket.operador || '',
+            ticket.executor || '',
+            ticket.inicio || '',
+            ticket.arquivado_por || '',
+            ticket.fim || '',
+            ticket.tempo_decorrido || '',
+            ticket.status_prazo || ''
+        ];
+
+        cells.forEach(value => {
+            const cell = row.insertCell();
+            cell.textContent = value;
+        });
+
+        // Adiciona classes de cor
+        if (ticket.status_prazo === 'No Prazo') {
+            row.classList.add('green');
+        } else if (ticket.status_prazo === 'Fora do Prazo (A)') {
+            row.classList.add('red');
         }
+    });
+}
+
+
     const users = [
         ["Jefferson", "123123"],
         ["Castelo", "123123"],
@@ -733,7 +700,7 @@ function parseDataBR(dataStr) {
 
     const operadores = ["", "Castelo", "Marcelo", "Julia", "kaline", "Gabriel", "Jeffeson"];
     const executores = ["", "Airton", "Damião", "Daniel", "Alison"];
-    const problemas = ["","Acesso Lento","Acréscimo de canais","Adição de equipamento","Ajuste no IPV6","Ativação de Link","Ativação de Telefonia","Cliente entrou em contato pedindo uma informação tecnica","Falha elétrica no cliente”,“Falha elétrica no POP da Inovanet","Falha no equipamento da Inovanet","Falha no fornecimento de internet pela ALGAR","Falha no fornecimento de internet pela BR DIGITAL","Falha no link de transporte","Help Desk Presencial","Help Desk Remoto","Help Desk Telefonia","implantar cabo de internet","Mudança de endereço","Mudança de Equipamentos","Mudança de Local do Aparelho","Operadora de telefonia com falha de rotas","Orçamento","Outros","Portabilidade da linha","Problema na Hybrid","Problemas com páginas","Problemas no VOIP","Recolher equipamento","Rompimento do Backbone em Natal","Rompimento do drop do cliente em Ceará-Mirim","Rompimento do drop do cliente em Mossoró","Rompimento do drop do cliente em Natal","Rompimento do drop do cliente em Parnamirim","Rompimento no drop em STO","Rompimento no transporte da Intelnet","Rompimento no transporte para Ceará-Mirim","Rompimento no transporte para São José de Mipibu","Sem Acesso","Sem ping","Solicitação BGP","Solicitação de linha nova","Troca de CEO","Troca de conector tipo click","Troca de conector tipo RJ45","Troca de CTO","Troca de DROP","Troca de fonte com defeito","Troca de splitter"];
+    const problemas = ["","Acesso Lento","Acréscimo de canais","Adição de equipamento","Ajuste no IPV6","Ativação de Link","Ativação de Telefonia","Cliente entrou em contato pedindo uma informação tecnica","Falha elétrica no cliente”,“Falha elétrica no POP da Inovanet","Falha no equipamento da Inovanet","Falha no fornecimento de internet pela ALGAR","Falha no fornecimento de internet pela BR DIGITAL","Falha no link de transporte","Help Desk Presencial","Help Desk Remoto","Help Desk Telefonia","implantar cabo de internet","Mudança de endereço","Mudança de Equipamentos","Mudança de Local do Aparelho","Operadora de telefonia com falha de rotas","Orçamento","Outros","Portabilidade da linha","Problema na Hybrid","Problemas com páginas","Problemas no VOIP","Recolher equipamento","Rompimento do Backbone em Natal","Rompimento do drop do cliente em Ceará-Mirim","Rompimento do drop do cliente em Mossoró","Rompimento do drop do cliente em Natal","Rompimento do drop do cliente em Parnamirim","Rompimento no drop em STO","Rompimento no transporte da Intelnet","Rompimento no transporte para Ceará-Mirim","Rompimento no transporte para São José de Mipibu","Sem Acesso","Sem ping","Solicitação BGP","Solicitação de linha nova","Troca de CEO","Troca de conector tipo click","Troca de conector tipo RJ45","Troca de CTO","Troca de DROP","Troca de fonte com defeito","Troca de splitter",];
     const ncOpcoes = ["","476","490","135","240","306","317","318","169","110","184","40","65","224","251","370","214","215","342","520","199","467","242","457","22","327","498","500","417","216","248","210","247","80","24","152","51","195","69","205","358","115","119","50","549","550","191","365","13","151","470","405","359","334","404","399","407","55","424","462","469","535","435","222","176","319","570","441","436","437","438","43","446","225","323","15","491","54","109","515","538","539","553","552","21","483","264","37","88","4","245","354","501","447","494","475","418","182","26","512","572","157","187","361","536","243","217","582","579","442","310","198","160","8","161","158","137","165","212","305","140","534","532","132","235","303","433","2","311","285","229","409","465","521","153","527","196","332","5","328","324","408","211","519","422","421","78","471","174","73","67","403","338","102","238","201","396","428","410","406","580","489","518","180","181","260","577","492","559","188","44","297","479","524","148","87","453","108","452","236","444","454","445","448","449","308","309","76","565","466","170","171","360","374","371","555","156","146","484","516","514","197","254","255","413","378","456","507","523","104","185","289","496","463","537","60","18","36","290","316","425","27","257","529","584","574","458","495","48","427","368","213","241","43","517","190","499","522","509","510","511","583","124","431","551","228","322","321","262","394","352","275","315","263","283","280","270","276","295","246","353","302","232","451","506","343","286","325","485","220","189","575","155","573","414","505","143","144","123","330","480","434","96","17","493","531","145","347","557","432","271","416","223","450","369","478","571","576","298","391","388","389","393","390","162","340","204",]
     let database = JSON.parse(localStorage.getItem('ticketDatabase')) || [];
     let timers = new Map();
@@ -1016,43 +983,11 @@ function startTimer(ticketDiv, resumeFrom = null) {
     let timeLeft = resumeFrom !== null ? resumeFrom : ts;
     let timerType = ticketDiv.getAttribute('data-timer-type');
 
-    if (timers.has(ticketDiv)) {
-        clearInterval(timers.get(ticketDiv));
-    }
-
-    const timer = setInterval(() => {
-        if (timerType === 'T' && timeLeft > 0) {
-            timeLeft--;
-            updateTimerDisplay(timerDisplay, timeLeft, 'T');
-            updateTicketColor(ticketDiv, timeLeft / ts);
-            
-            if (timeLeft === 0) {
-                timerType = 'A';
-                ticketDiv.setAttribute('data-timer-type', 'A');
-                timeLeft = 0;
-                ticketDiv.classList.add('red');
-            }
-        } else {
-            timeLeft++;
-            updateTimerDisplay(timerDisplay, timeLeft, 'A');
-            ticketDiv.classList.add('red');
-        }
-    }, 1000);
-
-    timers.set(ticketDiv, timer);
-}
-
-function startTimer(ticketDiv, resumeFrom = null) {
-    const timerDisplay = ticketDiv.querySelector('.timer');
-    const tsInput = ticketDiv.querySelector('.input-time');
-    const ts = timeToSeconds(tsInput.value || '0:0:0');
-    let timeLeft = resumeFrom !== null ? resumeFrom : ts;
-    let timerType = ticketDiv.getAttribute('data-timer-type');
-
-    // Configurar automaticamente a hora de início se ainda não estiver definida
+    // Configurar hora de início
     const horaInicioInput = ticketDiv.querySelector('input[id="hora_inicio"]');
     if (!horaInicioInput.value) {
-        horaInicioInput.value = new Date().toLocaleTimeString();
+        const now = new Date();
+        horaInicioInput.value = now.toLocaleTimeString();
     }
 
     if (timers.has(ticketDiv)) {
@@ -1060,7 +995,8 @@ function startTimer(ticketDiv, resumeFrom = null) {
     }
 
     const startTime = Date.now();
-    ticketDiv.setAttribute('data-start-time', startTime);
+    ticketDiv.setAttribute('data-start-time', startTime.toString());
+    ticketDiv.setAttribute('data-accumulated-time', '0');
 
     const timer = setInterval(() => {
         if (timerType === 'T' && timeLeft > 0) {
@@ -1083,6 +1019,7 @@ function startTimer(ticketDiv, resumeFrom = null) {
 
     timers.set(ticketDiv, timer);
 }
+
 
 
 
@@ -1238,19 +1175,29 @@ function applyFilters() {
     const filterEX = document.getElementById('filterEX').value;
     const filterStatus = document.getElementById('filterStatus').value;
 
-    console.log('Intervalo de datas selecionado:', filterDateRange);
-
     let startDate = null;
     let endDate = null;
 
     if (filterDateRange) {
-        const [startStr, endStr] = filterDateRange.split(' to ');
-        if (startStr) {
-            startDate = parseDataBR(startStr);
-            startDate?.setHours(0, 0, 0, 0);
+        const dates = filterDateRange.split(' to ');
+        if (dates[0]) {
+            startDate = parseDateTimeStr(dates[0]);
+            if (startDate) {
+                startDate.setHours(0, 0, 0, 0);
+            }
             
-            endDate = endStr ? parseDataBR(endStr) : parseDataBR(startStr);
-            endDate?.setHours(23, 59, 59, 999);
+            if (dates[1]) {
+                endDate = parseDateTimeStr(dates[1]);
+                if (endDate) {
+                    endDate.setHours(23, 59, 59, 999);
+                }
+            } else {
+                // Se só uma data foi selecionada, usa ela como início e fim
+                endDate = parseDateTimeStr(dates[0]);
+                if (endDate) {
+                    endDate.setHours(23, 59, 59, 999);
+                }
+            }
         }
     }
 
@@ -1260,109 +1207,33 @@ function applyFilters() {
         cliente: filterCL,
         executor: filterEX,
         status: filterStatus,
-        startDate: startDate,
-        endDate: endDate
+        startDate,
+        endDate
     };
-
-    console.log('Filtros aplicados:', {
-        ...filters,
-        startDate: filters.startDate?.toISOString(),
-        endDate: filters.endDate?.toISOString()
-    });
 
     updateDatabaseTable(filters);
 }
 
-// Função atualizada de atualizar tabela
-function updateDatabaseTable(filters = {}) {
-    const tbody = document.getElementById('databaseTableBody');
-    tbody.innerHTML = '';
-
-    let filteredData = [...database];
-
-    // Aplica filtros de texto
-    if (filters.problema) {
-        filteredData = filteredData.filter(t => 
-            t.problema && t.problema.toLowerCase().includes(filters.problema.toLowerCase())
-        );
-    }
-    if (filters.operador) {
-        filteredData = filteredData.filter(t => 
-            t.operador && t.operador.toLowerCase().includes(filters.operador.toLowerCase())
-        );
-    }
-    if (filters.cliente) {
-        filteredData = filteredData.filter(t => 
-            t.cliente && t.cliente.toLowerCase().includes(filters.cliente.toLowerCase())
-        );
-    }
-    if (filters.executor) {
-        filteredData = filteredData.filter(t => 
-            t.executor && t.executor.toLowerCase().includes(filters.executor.toLowerCase())
-        );
-    }
-    if (filters.status) {
-        filteredData = filteredData.filter(t => 
-            t.status_prazo && t.status_prazo.toLowerCase().includes(filters.status.toLowerCase())
-        );
-    }
-
-    // Aplica filtro de data
-    if (filters.startDate && filters.endDate) {
-        filteredData = filteredData.filter(ticket => {
-            if (!ticket.inicio) return false;
-            
-            // Extrai apenas a data do ticket (remove a hora)
-            const [dataStr] = ticket.inicio.split(' ');
-            const ticketDate = parseDataBR(dataStr);
-            
-            if (!ticketDate) return false;
-
-            console.log('Comparando datas:', {
-                ticket: ticketDate.toISOString(),
-                start: filters.startDate.toISOString(),
-                end: filters.endDate.toISOString()
-            });
-
-            return ticketDate >= filters.startDate && ticketDate <= filters.endDate;
-        });
-    }
-
-    // Renderiza os dados filtrados
-    filteredData.forEach(ticket => {
-        const row = tbody.insertRow();
-        const cells = [
-            ticket.tempo_previsto || '',
-            ticket.cliente || '',
-            ticket.problema || '',
-            ticket.operador || '',
-            ticket.executor || '',
-            ticket.inicio || '',
-            ticket.arquivado_por || '',
-            ticket.fim || '',
-            ticket.tempo_decorrido || '',
-            ticket.status_prazo || ''
-        ];
-
-        cells.forEach(value => {
-            const cell = row.insertCell();
-            cell.textContent = value;
-        });
-
-        // Adiciona classes de cor
-        if (ticket.status_prazo === 'No Prazo') {
-            row.classList.add('green');
-        } else if (ticket.status_prazo === 'Fora do Prazo (A)') {
-            row.classList.add('red');
+function parseDateTimeStr(dateTimeStr) {
+    if (!dateTimeStr) return null;
+    
+    try {
+        // Se a string contém data e hora
+        if (dateTimeStr.includes(' ')) {
+            const [dateStr, timeStr] = dateTimeStr.split(' ');
+            const [day, month, year] = dateStr.split('/').map(Number);
+            return new Date(year, month - 1, day);
         }
-    });
+        // Se a string contém apenas data
+        const [day, month, year] = dateTimeStr.split('/').map(Number);
+        return new Date(year, month - 1, day);
+    } catch (e) {
+        console.error('Erro ao converter data:', dateTimeStr, e);
+        return null;
+    }
 }
 
-function parseDataBR(dataStr) {
-    if (!dataStr) return null;
-    const [dia, mes, ano] = dataStr.split('/').map(num => parseInt(num, 10));
-    return new Date(ano, mes - 1, dia);
-}
+
 
 function formatDateTime(date) {
     return date.toLocaleString('pt-BR', {
