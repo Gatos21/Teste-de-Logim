@@ -557,7 +557,7 @@
             <input list="statusOptions" id="filterStatus">
             <datalist id="statusOptions">
                 <option value="No Prazo"></option>
-                <option value="Fora do Prazo (A)"></option>
+                <option value="Fora do Prazo"></option>
                 <!-- Add more options as needed -->
             </datalist>
     
@@ -701,8 +701,8 @@ function updateDatabaseTable(filters = {}) {
 
     const operadores = ["", "Castelo", "Marcelo", "Julia", "kaline", "Gabriel", "Jeffeson"];
     const executores = ["", "Airton", "Damião", "Daniel", "Alison"];
-    const problemas = ["","Acesso Lento",];
-    const ncOpcoes = ["","476","490",]
+    const problemas = ["","Acesso Lento","Acréscimo de canais","Adição de equipamento","Ajuste no IPV6","Ativação de Link","Ativação de Telefonia","Cliente entrou em contato pedindo uma informação tecnica","Falha elétrica no cliente”,“Falha elétrica no POP da Inovanet","Falha no equipamento da Inovanet","Falha no fornecimento de internet pela ALGAR","Falha no fornecimento de internet pela BR DIGITAL","Falha no link de transporte","Help Desk Presencial","Help Desk Remoto","Help Desk Telefonia","implantar cabo de internet","Mudança de endereço","Mudança de Equipamentos","Mudança de Local do Aparelho","Operadora de telefonia com falha de rotas","Orçamento","Outros","Portabilidade da linha","Problema na Hybrid","Problemas com páginas","Problemas no VOIP","Recolher equipamento","Rompimento do Backbone em Natal","Rompimento do drop do cliente em Ceará-Mirim","Rompimento do drop do cliente em Mossoró","Rompimento do drop do cliente em Natal","Rompimento do drop do cliente em Parnamirim","Rompimento no drop em STO","Rompimento no transporte da Intelnet","Rompimento no transporte para Ceará-Mirim","Rompimento no transporte para São José de Mipibu","Sem Acesso","Sem ping","Solicitação BGP","Solicitação de linha nova","Troca de CEO","Troca de conector tipo click","Troca de conector tipo RJ45","Troca de CTO","Troca de DROP","Troca de fonte com defeito","Troca de splitter",];
+    const ncOpcoes = ["","476","490","135","240","306","317","318","169","110","184","40","65","224","251","370","214","215","342","520","199","467","242","457","22","327","498","500","417","216","248","210","247","80","24","152","51","195","69","205","358","115","119","50","549","550","191","365","13","151","470","405","359","334","404","399","407","55","424","462","469","535","435","222","176","319","570","441","436","437","438","43","446","225","323","15","491","54","109","515","538","539","553","552","21","483","264","37","88","4","245","354","501","447","494","475","418","182","26","512","572","157","187","361","536","243","217","582","579","442","310","198","160","8","161","158","137","165","212","305","140","534","532","132","235","303","433","2","311","285","229","409","465","521","153","527","196","332","5","328","324","408","211","519","422","421","78","471","174","73","67","403","338","102","238","201","396","428","410","406","580","489","518","180","181","260","577","492","559","188","44","297","479","524","148","87","453","108","452","236","444","454","445","448","449","308","309","76","565","466","170","171","360","374","371","555","156","146","484","516","514","197","254","255","413","378","456","507","523","104","185","289","496","463","537","60","18","36","290","316","425","27","257","529","584","574","458","495","48","427","368","213","241","43","517","190","499","522","509","510","511","583","124","431","551","228","322","321","262","394","352","275","315","263","283","280","270","276","295","246","353","302","232","451","506","343","286","325","485","220","189","575","155","573","414","505","143","144","123","330","480","434","96","17","493","531","145","347","557","432","271","416","223","450","369","478","571","576","298","391","388","389","393","390","162","340","204",]
     let database = JSON.parse(localStorage.getItem('ticketDatabase')) || [];
     let timers = new Map();
     let accumulatedTimes = new Map();
@@ -938,7 +938,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (timerType === 'T' && tempoDecorridoSeconds <= tempoPrevistoSeconds) {
             statusPrazo = 'No Prazo';
         } else {
-            statusPrazo = 'Fora do Prazo (A)';
+            statusPrazo = 'Fora do Prazo';
         }
 
         const ticket = {
