@@ -217,6 +217,7 @@
                 <option value="Troca de DROP"></option>
                 <option value="Troca de fonte com defeito"></option>
                 <option value="Troca de splitter"></option>
+            
                 <!-- Add more options as needed -->
             </datalist>
 
@@ -541,6 +542,7 @@
                 <option value="162"></option>
                 <option value="340"></option>
                 <option value="204"></option>
+                
             </datalist>
             
             <label>Filtrar por EXECUTOR:</label>
@@ -681,7 +683,7 @@ function updateDatabaseTable(filters = {}) {
         // Adiciona classes de cor
         if (ticket.status_prazo === 'No Prazo') {
             row.classList.add('green');
-        } else if (ticket.status_prazo === 'Fora do Prazo (A)') {
+        } else if (ticket.status_prazo === 'Fora do Prazo') {
             row.classList.add('red');
         }
     });
